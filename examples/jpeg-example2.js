@@ -15,15 +15,15 @@ for (var i=0; i<HEIGHT; i++) {
     }
 }
 
-var png = new Jpeg(rgba, WIDTH, HEIGHT, 50, 'rgb');
+var jpeg = new Jpeg(rgba, WIDTH, HEIGHT, 50, 'rgb');
 
 var fd = fs.openSync('./jpeg-gradient.jpeg', 'w+', 0660);
 var written = 0;
-png.addListener('data', function(chunk, length) {
+jpeg.addListener('data', function(chunk, length) {
     written += fs.writeSync(fd, chunk, written, 'binary');
 });
-png.addListener('end', function() {
+jpeg.addListener('end', function() {
     fs.closeSync(fd);
 });
-png.encode();
+jpeg.encode();
 
