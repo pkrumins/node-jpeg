@@ -1,5 +1,4 @@
 #include <node.h>
-#include <node_events.h>
 #include <node_buffer.h>
 #include <jpeglib.h>
 #include <cstdlib>
@@ -8,12 +7,9 @@
 using namespace v8;
 using namespace node;
 
-static Persistent<String> end_symbol;
-static Persistent<String> data_symbol;
-
 typedef enum { BUF_RGBA, BUF_RGB } buf_type_t;
 
-class Jpeg : public EventEmitter {
+class Jpeg : public ObjectWrap {
 private:
     int width_;
     int height_;
@@ -27,17 +23,14 @@ public:
     {
         HandleScope scope;
         Local<FunctionTemplate> t = FunctionTemplate::New(New);
-        t->Inherit(EventEmitter::constructor_template);
         t->InstanceTemplate()->SetInternalFieldCount(1);
-        end_symbol = NODE_PSYMBOL("end");
-        data_symbol = NODE_PSYMBOL("data");
         NODE_SET_PROTOTYPE_METHOD(t, "encode", JpegEncode);
         target->Set(String::NewSymbol("Jpeg"), t->GetFunction());
     }
 
     Jpeg(Buffer *rgba, int width, int height, int quality, buf_type_t buf_type) :
-        EventEmitter(), rgba_(rgba), width_(width), height_(height),
-        quality_(quality), buf_type_(buf_type) { }
+        rgba_(rgba), width_(width), height_(height), quality_(quality),
+        buf_type_(buf_type) { }
 
     static unsigned char *
     rgba_to_rgb(unsigned char *rgba, int rgba_size)
@@ -54,7 +47,9 @@ public:
         return rgb;
     }
 
-    void JpegEncode() {
+    Handle<Value> JpegEncode() {
+        HandleScope scope;
+
         unsigned char *mem_dest;
         unsigned long outsize = 0;
 
@@ -82,10 +77,10 @@ public:
             rgb_data = (unsigned char *)rgba_->data();
         }
 
-        JSAMPROW row_pointer[1];
+        JSAMPROW row_pointer;
         while (cinfo.next_scanline < cinfo.image_height) {
-            row_pointer[0] = &rgb_data[cinfo.next_scanline*3*width_];
-            jpeg_write_scanlines(&cinfo, row_pointer, 1);
+            row_pointer = &rgb_data[cinfo.next_scanline*3*width_];
+            jpeg_write_scanlines(&cinfo, &row_pointer, 1);
         }
 
         jpeg_finish_compress(&cinfo);
@@ -94,12 +89,7 @@ public:
         free(mem_dest);
         if (buf_type_ == BUF_RGBA) free(rgb_data);
 
-        Local<Value> args[2] = {
-            Encode((char *)mem_dest, outsize, BINARY),
-            Integer::New(outsize)
-        };
-        Emit(data_symbol, 2, args);
-        Emit(end_symbol, 0, NULL);
+        return scope.Close(Encode((char *)mem_dest, outsize, BINARY));
     }
 
 protected:
@@ -126,17 +116,11 @@ protected:
         String::AsciiValue bt(args[4]->ToString());
         if (!(strcmp(*bt, "rgb") == 0 || strcmp(*bt, "rgba") == 0))
             ThrowException(Exception::Error(String::New("Fifth argument must be either 'rgba' or 'rgb'.")));
-        buf_type_t buf_type;
-        if (strcmp(*bt, "rgb") == 0) {
-            buf_type = BUF_RGB;
-        }
-        else {
-            buf_type = BUF_RGBA;
-        }
+        buf_type_t buf_type = (strcmp(*bt, "rgb") == 0) ?  BUF_RGB : BUF_RGBA;
 
         Buffer *rgba = ObjectWrap::Unwrap<Buffer>(args[0]->ToObject());
-        Jpeg *jpeg = new Jpeg(rgba, args[1]->Int32Value(), args[2]->Int32Value(),
-            quality, buf_type);
+        Jpeg *jpeg = new Jpeg(rgba, args[1]->Int32Value(),
+            args[2]->Int32Value(), quality, buf_type);
         jpeg->Wrap(args.This());
         return args.This();
     }
@@ -146,8 +130,7 @@ protected:
     {
         HandleScope scope;
         Jpeg *jpeg = ObjectWrap::Unwrap<Jpeg>(args.This());
-        jpeg->JpegEncode();
-        return Undefined();
+        return jpeg->JpegEncode();
     }
 };
 

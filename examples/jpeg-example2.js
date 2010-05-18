@@ -16,14 +16,7 @@ for (var i=0; i<HEIGHT; i++) {
 }
 
 var jpeg = new Jpeg(rgba, WIDTH, HEIGHT, 50, 'rgb');
+var jpeg_img = jpeg.encode();
 
-var fd = fs.openSync('./jpeg-gradient.jpeg', 'w+', 0660);
-var written = 0;
-jpeg.addListener('data', function(chunk, length) {
-    written += fs.writeSync(fd, chunk, written, 'binary');
-});
-jpeg.addListener('end', function() {
-    fs.closeSync(fd);
-});
-jpeg.encode();
+fs.writeFileSync('./jpeg-gradient.jpeg', jpeg_img, 'binary');
 

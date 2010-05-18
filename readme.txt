@@ -1,6 +1,6 @@
 This is a node.js module, writen in C++, that uses libjpeg to produce a JPEG
-image from a buffer of RGBA or RGB values. Since JPEG has no notion of A (alpha),
-the module always uses just RGB values.
+image (in memory) from a buffer of RGBA or RGB values. Since JPEG has no notion
+of A (alpha), the module always uses just RGB values.
 
 It was written by Peteris Krumins (peter@catonmat.net).
 His blog is at http://www.catonmat.net  --  good coders code, great reuse.
@@ -26,7 +26,7 @@ To get it compiled, you need to have libjpeg and node installed. Then just run
 
 to build the Jpeg module. It will produce a `jpeg.node` file as the module.
 
-See also http://github.com/pkrumins/node-png to produce PNG images.
+See also http://github.com/pkrumins/node-png module that produces PNG images.
 
 ------------------------------------------------------------------------------
 
