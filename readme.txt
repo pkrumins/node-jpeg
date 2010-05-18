@@ -26,6 +26,7 @@ To get it compiled, you need to have libjpeg and node installed. Then just run
 
 to build the Jpeg module. It will produce a `jpeg.node` file as the module.
 
+See also http://github.com/pkrumins/node-png to produce PNG images.
 
 ------------------------------------------------------------------------------
 
