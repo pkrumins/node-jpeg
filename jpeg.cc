@@ -7,6 +7,12 @@
 using namespace v8;
 using namespace node;
 
+static Handle<Value>
+VException(const char *msg) {
+    HandleScope scope;
+    return ThrowException(Exception::Error(String::New(msg)));
+}
+
 typedef enum { BUF_RGBA, BUF_RGB } buf_type_t;
 
 class Jpeg : public ObjectWrap {
@@ -22,6 +28,7 @@ public:
     Initialize(v8::Handle<v8::Object> target)
     {
         HandleScope scope;
+
         Local<FunctionTemplate> t = FunctionTemplate::New(New);
         t->InstanceTemplate()->SetInternalFieldCount(1);
         NODE_SET_PROTOTYPE_METHOD(t, "encode", JpegEncode);
@@ -30,7 +37,7 @@ public:
 
     Jpeg(Buffer *rgba, int width, int height, int quality, buf_type_t buf_type) :
         rgba_(rgba), width_(width), height_(height), quality_(quality),
-        buf_type_(buf_type) { }
+        buf_type_(buf_type) {}
 
     static unsigned char *
     rgba_to_rgb(unsigned char *rgba, int rgba_size)
@@ -73,6 +80,7 @@ public:
         unsigned char *rgb_data;
         if (buf_type_ == BUF_RGBA) {
             rgb_data = rgba_to_rgb((unsigned char *)rgba_->data(), width_*height_*4);
+            if (!rgb_data) return VException("malloc failed in rgba_to_rgb.");
         } else {
             rgb_data = (unsigned char *)rgba_->data();
         }
@@ -99,28 +107,31 @@ protected:
         HandleScope scope;
 
         if (args.Length() != 5)
-            ThrowException(Exception::Error(String::New("Five arguments required - rgba/rgb buffer, width, height, quality, buffer type")));
+            return VException("Five arguments required - rgba/rgb buffer, width, height, quality, buffer type");
         if (!Buffer::HasInstance(args[0]))
-            ThrowException(Exception::Error(String::New("First argument must be Buffer.")));
+            return VException("First argument must be Buffer.");
         if (!args[1]->IsInt32())
-            ThrowException(Exception::Error(String::New("Second argument must be integer width.")));
+            return VException("Second argument must be integer width.");
         if (!args[2]->IsInt32())
-            ThrowException(Exception::Error(String::New("Third argument must be integer height.")));
+            return VException("Third argument must be integer height.");
         if (!args[3]->IsInt32())
-            ThrowException(Exception::Error(String::New("Fourth argument must be integer quality.")));
-        int quality = args[3]->Int32Value();
-        if (quality < 0 || quality > 100)
-            ThrowException(Exception::Error(String::New("Quality must be between 0 and 100 (inclusive).")));
+            return VException("Fourth argument must be integer quality.");
         if (!args[4]->IsString())
-            ThrowException(Exception::Error(String::New("Fifth argument must be a string. Either 'rgba' or 'rgb'.")));
+            return VException("Fifth argument must be a string. Either 'rgba' or 'rgb'.");
+
+        int w = args[1]->Int32Value();
+        int h = args[2]->Int32Value();
+        int quality = args[3]->Int32Value();
         String::AsciiValue bt(args[4]->ToString());
+
+        if (quality < 0 || quality > 100)
+            return VException("Quality must be between 0 and 100 (inclusive).");
         if (!(strcmp(*bt, "rgb") == 0 || strcmp(*bt, "rgba") == 0))
-            ThrowException(Exception::Error(String::New("Fifth argument must be either 'rgba' or 'rgb'.")));
+            return VException("Fifth argument must be either 'rgba' or 'rgb'.");
         buf_type_t buf_type = (strcmp(*bt, "rgb") == 0) ?  BUF_RGB : BUF_RGBA;
 
         Buffer *rgba = ObjectWrap::Unwrap<Buffer>(args[0]->ToObject());
-        Jpeg *jpeg = new Jpeg(rgba, args[1]->Int32Value(),
-            args[2]->Int32Value(), quality, buf_type);
+        Jpeg *jpeg = new Jpeg(rgba, w, h, quality, buf_type);
         jpeg->Wrap(args.This());
         return args.This();
     }
