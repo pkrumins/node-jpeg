@@ -1,7 +1,8 @@
 #include "jpeg_encoder.h"
 
 JpegEncoder::JpegEncoder(unsigned char *ddata, int wwidth, int hheight,
-    int qquality, buffer_type bbuf_type) :
+    int qquality, buffer_type bbuf_type)
+    :
     data(ddata), width(wwidth), height(hheight), quality(qquality),
     buf_type(bbuf_type),
     jpeg(NULL), jpeg_len(0) {}
