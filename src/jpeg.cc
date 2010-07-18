@@ -65,10 +65,14 @@ Jpeg::New(const Arguments &args)
     int quality = args[3]->Int32Value();
     String::AsciiValue bt(args[4]->ToString());
 
+    if (w < 0)
+        return VException("Width can't be negative.");
+    if (h < 0)
+        return VException("Height can't be negative.");
     if (quality < 0 || quality > 100)
         return VException("Quality must be between 0 and 100 (inclusive).");
     if (!(str_eq(*bt, "rgb") || str_eq(*bt, "rgba")))
-        return VException("Fifth argument must be either 'rgb' or 'rgba'.");
+        return VException("Buffer type must be either 'rgb' or 'rgba'.");
 
     buffer_type buf_type;
     if (str_eq(*bt, "rgb"))
@@ -85,7 +89,7 @@ Jpeg::New(const Arguments &args)
 }
 
 Handle<Value>
-Jpeg::JpegEncode(const Arguments& args)
+Jpeg::JpegEncode(const Arguments &args)
 {
     HandleScope scope;
     Jpeg *jpeg = ObjectWrap::Unwrap<Jpeg>(args.This());
