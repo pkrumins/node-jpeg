@@ -20,6 +20,7 @@ DynamicJpegStack::Initialize(v8::Handle<v8::Object> target)
     t->InstanceTemplate()->SetInternalFieldCount(1);
     NODE_SET_PROTOTYPE_METHOD(t, "encode", JpegEncode);
     NODE_SET_PROTOTYPE_METHOD(t, "push", Push);
+    NODE_SET_PROTOTYPE_METHOD(t, "reset", Reset);
     NODE_SET_PROTOTYPE_METHOD(t, "setBackground", SetBackground);
     NODE_SET_PROTOTYPE_METHOD(t, "dimensions", Dimensions);
     target->Set(String::NewSymbol("DynamicJpegStack"), t->GetFunction());
@@ -27,25 +28,30 @@ DynamicJpegStack::Initialize(v8::Handle<v8::Object> target)
 
 DynamicJpegStack::DynamicJpegStack(int qquality, buffer_type bbuf_type) :
     quality(qquality), buf_type(bbuf_type),
-    bg_width(0), bg_height(0), dyn_width(0), dyn_height(0), offset(0, 0), data(NULL) {}
+    dyn_rect(-1, -1, 0, 0),
+    bg_width(0), bg_height(0), data(NULL) {}
 
-std::pair<Point, Point>
-DynamicJpegStack::OptimalDimension()
+void
+DynamicJpegStack::UpdateOptimalDimension(int x, int y, int w, int h)
 {
-    Point top(-1, -1), bottom(-1, -1);
-    for (RectVector::iterator it = updates.begin(); it != updates.end(); ++it) {
-        Rect &r = *it;
-        if (top.x == -1 || r.x < top.x)
-            top.x = r.x;
-        if (top.y == -1 || r.y < top.y)
-            top.y = r.y;
-        if (bottom.x == -1 || r.x + r.w > bottom.x)
-            bottom.x = r.x + r.w;
-        if (bottom.y == -1 || r.y + r.h > bottom.y)
-            bottom.y = r.y + r.h;
-    }
+    if (dyn_rect.x == -1 || x < dyn_rect.x)
+        dyn_rect.x = x;
+    if (dyn_rect.y == -1 || y < dyn_rect.y)
+        dyn_rect.y = y;
+    
+    if (dyn_rect.w == 0)
+        dyn_rect.w = w;
+    if (dyn_rect.h == 0)
+        dyn_rect.h = h;
 
-    return std::make_pair(top, bottom);
+    int ww = w - (dyn_rect.w - (x - dyn_rect.x));
+    if (ww > 0)
+        dyn_rect.w += ww;
+
+    int hh = h - (dyn_rect.h - (y - dyn_rect.y));
+    if (hh > 0)
+        dyn_rect.h += hh;
+
 }
 
 Handle<Value>
@@ -53,17 +59,11 @@ DynamicJpegStack::JpegEncode()
 {
     HandleScope scope;
 
-    // TODO: this can be computed on the fly as we push() to stack
-    std::pair<Point, Point> optimal = OptimalDimension(); 
-    Point top = optimal.first, bot = optimal.second;
-
-    offset = top;
-    dyn_width = bot.x - top.x;
-    dyn_height = bot.y - top.y;
+    printf("%d %d\n", dyn_rect.w, dyn_rect.h);
 
     try {
         JpegEncoder jpeg_encoder(data, bg_width, bg_height, quality, BUF_RGB);
-        jpeg_encoder.setRect(Rect(offset.x, offset.y, dyn_width, dyn_height));
+        jpeg_encoder.setRect(Rect(dyn_rect.x, dyn_rect.y, dyn_rect.w, dyn_rect.h));
         jpeg_encoder.encode();
         return scope.Close(
             Encode(jpeg_encoder.get_jpeg(), jpeg_encoder.get_jpeg_len(), BINARY)
@@ -77,9 +77,9 @@ DynamicJpegStack::JpegEncode()
 void
 DynamicJpegStack::Push(unsigned char *data_buf, int x, int y, int w, int h)
 {
-    int start = y*bg_width*3 + x*3;
+    UpdateOptimalDimension(x, y, w, h);
 
-    updates.push_back(Rect(x, y, w, h));
+    int start = y*bg_width*3 + x*3;
 
     if (buf_type == BUF_RGB || buf_type == BUF_BGR) {
         for (int i = 0; i < h; i++) {
@@ -119,16 +119,22 @@ DynamicJpegStack::SetBackground(unsigned char *data_buf, int w, int h)
     bg_height = h;
 }
 
+void
+DynamicJpegStack::Reset()
+{
+    dyn_rect = Rect(-1, -1, 0, 0);
+}
+
 Handle<Value>
 DynamicJpegStack::Dimensions()
 {
     HandleScope scope;
 
     Local<Object> dim = Object::New();
-    dim->Set(String::NewSymbol("x"), Integer::New(offset.x));
-    dim->Set(String::NewSymbol("y"), Integer::New(offset.y));
-    dim->Set(String::NewSymbol("width"), Integer::New(dyn_width));
-    dim->Set(String::NewSymbol("height"), Integer::New(dyn_height));
+    dim->Set(String::NewSymbol("x"), Integer::New(dyn_rect.x));
+    dim->Set(String::NewSymbol("y"), Integer::New(dyn_rect.y));
+    dim->Set(String::NewSymbol("width"), Integer::New(dyn_rect.w));
+    dim->Set(String::NewSymbol("height"), Integer::New(dyn_rect.h));
 
     return scope.Close(dim);
 }
@@ -257,6 +263,16 @@ DynamicJpegStack::SetBackground(const Arguments &args)
         return VException(err);
     }
 
+    return Undefined();
+}
+
+Handle<Value>
+DynamicJpegStack::Reset(const Arguments &args)
+{
+    HandleScope scope;
+
+    DynamicJpegStack *jpeg = ObjectWrap::Unwrap<DynamicJpegStack>(args.This());
+    jpeg->Reset();
     return Undefined();
 }
 
