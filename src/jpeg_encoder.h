@@ -14,6 +14,8 @@ class JpegEncoder {
     unsigned char *jpeg;
     long unsigned int jpeg_len;
 
+    Rect offset;
+
 public:
     JpegEncoder(unsigned char *ddata, int wwidth, int hheight,
         int qquality, buffer_type bbuf_type);
@@ -22,6 +24,8 @@ public:
     void encode();
     const unsigned char *get_jpeg() const;
     unsigned int get_jpeg_len() const;
+
+    void setRect(const Rect &r);
 };
 
 #endif

@@ -5,7 +5,8 @@ JpegEncoder::JpegEncoder(unsigned char *ddata, int wwidth, int hheight,
     :
     data(ddata), width(wwidth), height(hheight), quality(qquality),
     buf_type(bbuf_type),
-    jpeg(NULL), jpeg_len(0) {}
+    jpeg(NULL), jpeg_len(0),
+    offset(0, 0, 0, 0) {}
 
 JpegEncoder::~JpegEncoder() {
     free(jpeg);
@@ -22,8 +23,14 @@ JpegEncoder::encode()
     jpeg_create_compress(&cinfo);
     jpeg_mem_dest(&cinfo, &jpeg, &jpeg_len);
 
-    cinfo.image_width = width;
-    cinfo.image_height = height;
+    if (offset.isNull()) {
+        cinfo.image_width = width;
+        cinfo.image_height = height;
+    }
+    else {
+        cinfo.image_width = offset.w;
+        cinfo.image_height = offset.h;
+    }
     cinfo.input_components = 3;
     cinfo.in_color_space = JCS_RGB;
 
@@ -53,9 +60,19 @@ JpegEncoder::encode()
     }
 
     JSAMPROW row_pointer;
-    while (cinfo.next_scanline < cinfo.image_height) {
-        row_pointer = &rgb_data[cinfo.next_scanline*3*width];
-        jpeg_write_scanlines(&cinfo, &row_pointer, 1);
+
+    if (offset.isNull()) {
+        while (cinfo.next_scanline < cinfo.image_height) {
+            row_pointer = &rgb_data[cinfo.next_scanline*3*width];
+            jpeg_write_scanlines(&cinfo, &row_pointer, 1);
+        }
+    }
+    else {
+        int start = offset.y*width*3 + offset.x*3;
+        while (cinfo.next_scanline < cinfo.image_height) {
+            row_pointer = &rgb_data[start + cinfo.next_scanline*3*width];
+            jpeg_write_scanlines(&cinfo, &row_pointer, 1);
+        }
     }
 
     jpeg_finish_compress(&cinfo);
@@ -76,3 +93,10 @@ JpegEncoder::get_jpeg_len() const
 {
     return jpeg_len;
 }
+
+void
+JpegEncoder::setRect(const Rect &r)
+{
+    offset = r;
+}
+
