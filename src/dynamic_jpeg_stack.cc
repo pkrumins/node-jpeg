@@ -59,8 +59,6 @@ DynamicJpegStack::JpegEncode()
 {
     HandleScope scope;
 
-    printf("%d %d\n", dyn_rect.w, dyn_rect.h);
-
     try {
         JpegEncoder jpeg_encoder(data, bg_width, bg_height, quality, BUF_RGB);
         jpeg_encoder.setRect(Rect(dyn_rect.x, dyn_rect.y, dyn_rect.w, dyn_rect.h));
