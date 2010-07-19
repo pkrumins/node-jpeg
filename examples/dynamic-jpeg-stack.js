@@ -30,3 +30,6 @@ files.forEach(function(file) {
 
 fs.writeFileSync('dynamic.jpg', jpegStack.encode(), 'binary');
 
+var dims = jpegStack.dimensions();
+
+sys.puts("x: " + dims.x + ", y: " + dims.y + ", w: " + dims.width + ", h: " + dims.height);
