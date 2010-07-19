@@ -60,19 +60,13 @@ JpegEncoder::encode()
     }
 
     JSAMPROW row_pointer;
-
-    if (offset.isNull()) {
-        while (cinfo.next_scanline < cinfo.image_height) {
-            row_pointer = &rgb_data[cinfo.next_scanline*3*width];
-            jpeg_write_scanlines(&cinfo, &row_pointer, 1);
-        }
+    int start = 0;
+    if (!offset.isNull()) {
+        start = offset.y*width*3 + offset.x*3;
     }
-    else {
-        int start = offset.y*width*3 + offset.x*3;
-        while (cinfo.next_scanline < cinfo.image_height) {
-            row_pointer = &rgb_data[start + cinfo.next_scanline*3*width];
-            jpeg_write_scanlines(&cinfo, &row_pointer, 1);
-        }
+    while (cinfo.next_scanline < cinfo.image_height) {
+        row_pointer = &rgb_data[start + cinfo.next_scanline*3*width];
+        jpeg_write_scanlines(&cinfo, &row_pointer, 1);
     }
 
     jpeg_finish_compress(&cinfo);
