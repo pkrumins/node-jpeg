@@ -147,23 +147,27 @@ DynamicJpegStack::New(const Arguments &args)
     if (!args[0]->IsInt32())
         return VException("First argument must be integer quality.");
     if (!args[1]->IsString())
-        return VException("Second argument must be a string. Either 'rgb' or 'rgba'.");
+        return VException("Second argument must be a string. Either 'rgb', 'bgr', 'rgba' or 'bgra'.");
 
     int quality = args[0]->Int32Value();
     String::AsciiValue bt(args[1]->ToString());
 
     if (quality < 0 || quality > 100)
         return VException("Quality must be between 0 and 100 (inclusive).");
-    if (!(str_eq(*bt, "rgb") || str_eq(*bt, "rgba")))
-        return VException("Buffer type must be either 'rgb' or 'rgba'.");
+    if (!(str_eq(*bt, "rgb") || str_eq(*bt, "bgr") || str_eq(*bt, "rgba") || str_eq(*bt, "bgra")))
+        return VException("Buffer type must be 'rgb', 'bgr', 'rgba' or 'bgra'.");
 
     buffer_type buf_type;
     if (str_eq(*bt, "rgb"))
         buf_type = BUF_RGB;
+    else if (str_eq(*bt, "bgr"))
+        buf_type = BUF_BGR;
     else if (str_eq(*bt, "rgba"))
         buf_type = BUF_RGBA;
+    else if (str_eq(*bt, "bgra"))
+        buf_type = BUF_BGRA;
     else 
-        return VException("Buffer type wasn't 'rgb' or 'rgba'");
+        return VException("Buffer type wasn't 'rgb', 'bgr', 'rgba' or 'bgra'.");
 
     DynamicJpegStack *jpeg = new DynamicJpegStack(quality, buf_type);
     jpeg->Wrap(args.This());

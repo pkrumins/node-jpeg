@@ -58,7 +58,7 @@ Jpeg::New(const Arguments &args)
     if (!args[3]->IsInt32())
         return VException("Fourth argument must be integer quality.");
     if (!args[4]->IsString())
-        return VException("Fifth argument must be a string. Either 'rgb' or 'rgba'.");
+        return VException("Fifth argument must be a string. Either 'rgb', 'bgr', 'rgba' or 'bgra'.");
 
     int w = args[1]->Int32Value();
     int h = args[2]->Int32Value();
@@ -71,16 +71,20 @@ Jpeg::New(const Arguments &args)
         return VException("Height can't be negative.");
     if (quality < 0 || quality > 100)
         return VException("Quality must be between 0 and 100 (inclusive).");
-    if (!(str_eq(*bt, "rgb") || str_eq(*bt, "rgba")))
-        return VException("Buffer type must be either 'rgb' or 'rgba'.");
+    if (!(str_eq(*bt, "rgb") || str_eq(*bt, "bgr") || str_eq(*bt, "rgba") || str_eq(*bt, "bgra")))
+        return VException("Buffer type must be 'rgb', 'bgr', 'rgba' or 'bgra'.");
 
     buffer_type buf_type;
     if (str_eq(*bt, "rgb"))
         buf_type = BUF_RGB;
+    else if (str_eq(*bt, "bgr"))
+        buf_type = BUF_BGR;
     else if (str_eq(*bt, "rgba"))
         buf_type = BUF_RGBA;
+    else if (str_eq(*bt, "bgra"))
+        buf_type = BUF_BGRA;
     else 
-        return VException("Buffer type wasn't 'rgb' or 'rgba'");
+        return VException("Buffer type wasn't 'rgb', 'bgr', 'rgba' or 'bgra'.");
 
     Buffer *data_buf = ObjectWrap::Unwrap<Buffer>(args[0]->ToObject());
     Jpeg *jpeg = new Jpeg(data_buf, w, h, quality, buf_type);
