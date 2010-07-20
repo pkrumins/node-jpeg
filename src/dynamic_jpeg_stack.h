@@ -23,6 +23,7 @@ class DynamicJpegStack : public node::ObjectWrap {
 
 public:
     DynamicJpegStack(int qquality, buffer_type bbuf_type);
+    ~DynamicJpegStack();
 
     v8::Handle<v8::Value> JpegEncode();
     void Push(unsigned char *data_buf, int x, int y, int w, int h);

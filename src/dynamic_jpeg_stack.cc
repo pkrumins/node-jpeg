@@ -31,6 +31,11 @@ DynamicJpegStack::DynamicJpegStack(int qquality, buffer_type bbuf_type) :
     dyn_rect(-1, -1, 0, 0),
     bg_width(0), bg_height(0), data(NULL) {}
 
+DynamicJpegStack::~DynamicJpegStack()
+{
+    free(data);
+}
+
 void
 DynamicJpegStack::UpdateOptimalDimension(int x, int y, int w, int h)
 {
@@ -79,7 +84,7 @@ DynamicJpegStack::Push(unsigned char *data_buf, int x, int y, int w, int h)
 
     int start = y*bg_width*3 + x*3;
 
-    if (buf_type == BUF_RGB || buf_type == BUF_BGR) {
+    if (buf_type == BUF_RGB) {
         for (int i = 0; i < h; i++) {
             for (int j = 0; j < 3*w; j+=3) {
                 data[start + i*bg_width*3 + j] = data_buf[i*w*3 + j];
@@ -88,7 +93,16 @@ DynamicJpegStack::Push(unsigned char *data_buf, int x, int y, int w, int h)
             }
         }
     }
-    else {
+    else if (buf_type == BUF_BGR) {
+        for (int i = 0; i < h; i++) {
+            for (int j = 0; j < 3*w; j+=3) {
+                data[start + i*bg_width*3 + j] = data_buf[i*w*3 + j + 2];
+                data[start + i*bg_width*3 + j + 1] = data_buf[i*w*3 + j + 1];
+                data[start + i*bg_width*3 + j + 2] = data_buf[i*w*3 + j];
+            }
+        }
+    }
+    else if (buf_type == BUF_RGBA) {
         for (int i = 0; i < h; i++) {
             for (int j = 0, k = 0; j < 3*w; j+=3, k+=4) {
                 data[start + i*bg_width*3 + j] = data_buf[i*w*4 + k];
@@ -97,20 +111,40 @@ DynamicJpegStack::Push(unsigned char *data_buf, int x, int y, int w, int h)
             }
         }
     }
+    else if (buf_type == BUF_BGRA) {
+        for (int i = 0; i < h; i++) {
+            for (int j = 0, k = 0; j < 3*w; j+=3, k+=4) {
+                data[start + i*bg_width*3 + j] = data_buf[i*w*4 + k + 2];
+                data[start + i*bg_width*3 + j + 1] = data_buf[i*w*4 + k + 1];
+                data[start + i*bg_width*3 + j + 2] = data_buf[i*w*4 + k];
+            }
+        }
+    }
 }
 
 void
 DynamicJpegStack::SetBackground(unsigned char *data_buf, int w, int h)
 {
-    if (data) free(data);
+    if (data) {
+        free(data);
+        data = NULL;
+    }
 
     if (buf_type == BUF_RGB) {
         data = (unsigned char *)malloc(sizeof(*data)*w*h*3);
         if (!data) throw "malloc failed in DynamicJpegStack::SetBackground";
         memcpy(data, data_buf, w*h*3);
     }
-    else {
+    else if (buf_type == BUF_BGR) {
+        data = bgr_to_rgb(data_buf, w*h*3);
+        if (!data) throw "malloc failed in DynamicJpegStack::SetBackground";
+    }
+    else if (buf_type == BUF_RGBA) {
         data = rgba_to_rgb(data_buf, w*h*4);
+        if (!data) throw "malloc failed in DynamicJpegStack::SetBackground";
+    }
+    else if (buf_type == BUF_BGRA) {
+        data = bgra_to_rgb(data_buf, w*h*4);
         if (!data) throw "malloc failed in DynamicJpegStack::SetBackground";
     }
     bg_width = w;
