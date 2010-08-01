@@ -17,7 +17,7 @@ def configure(conf):
 def build(bld):
   obj = bld.new_task_gen("cxx", "shlib", "node_addon")
   obj.target = "jpeg"
-  obj.source = "src/common.cc src/jpeg_encoder.cc src/jpeg.cc src/fixed_jpeg_stack.cc src/dynamic_jpeg_stack.cc src/module.cc"
+  obj.source = "src/common.cpp src/jpeg_encoder.cpp src/jpeg.cpp src/fixed_jpeg_stack.cpp src/dynamic_jpeg_stack.cpp src/module.cpp"
   obj.uselib = "JPEG"
 
 def shutdown():
