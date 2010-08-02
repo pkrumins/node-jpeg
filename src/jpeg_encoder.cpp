@@ -174,6 +174,12 @@ JpegEncoder::encode()
         free(rgb_data);
 }
 
+void
+JpegEncoder::set_quality(int q)
+{
+    quality = q;
+}
+
 const unsigned char *
 JpegEncoder::get_jpeg() const
 {

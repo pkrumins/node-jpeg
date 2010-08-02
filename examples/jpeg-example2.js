@@ -15,7 +15,7 @@ for (var i=0; i<HEIGHT; i++) {
     }
 }
 
-var jpeg = new Jpeg(rgba, WIDTH, HEIGHT, 50, 'rgb');
+var jpeg = new Jpeg(rgba, WIDTH, HEIGHT, 'rgb');
 var jpeg_img = jpeg.encode();
 
 fs.writeFileSync('./jpeg-gradient.jpeg', jpeg_img, 'binary');

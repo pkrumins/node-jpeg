@@ -7,7 +7,7 @@ var Buffer = require('buffer').Buffer;
 
 var terminal = fs.readFileSync('./rgba-terminal.dat');
 
-var jpegStack = new JpegLib.DynamicJpegStack(60, 'rgba');
+var jpegStack = new JpegLib.DynamicJpegStack('rgba');
 jpegStack.setBackground(terminal, 720, 400);
 
 function rectDim(fileName) {

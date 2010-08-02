@@ -15,13 +15,15 @@ class FixedJpegStack : public node::ObjectWrap {
 
 public:
     static void Initialize(v8::Handle<v8::Object> target);
-    FixedJpegStack(int wwidth, int hheight, int qquality, buffer_type bbuf_type);
+    FixedJpegStack(int wwidth, int hheight, buffer_type bbuf_type);
     v8::Handle<v8::Value> JpegEncode();
     void Push(unsigned char *data_buf, int x, int y, int w, int h);
+    void SetQuality(int q);
 
     static v8::Handle<v8::Value> New(const v8::Arguments &args);
     static v8::Handle<v8::Value> JpegEncode(const v8::Arguments &args);
     static v8::Handle<v8::Value> Push(const v8::Arguments &args);
+    static v8::Handle<v8::Value> SetQuality(const v8::Arguments &args);
 };
 
 #endif

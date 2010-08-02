@@ -20,11 +20,12 @@ FixedJpegStack::Initialize(v8::Handle<v8::Object> target)
     t->InstanceTemplate()->SetInternalFieldCount(1);
     NODE_SET_PROTOTYPE_METHOD(t, "encode", JpegEncode);
     NODE_SET_PROTOTYPE_METHOD(t, "push", Push);
+    NODE_SET_PROTOTYPE_METHOD(t, "setQuality", SetQuality);
     target->Set(String::NewSymbol("FixedJpegStack"), t->GetFunction());
 }
 
-FixedJpegStack::FixedJpegStack(int wwidth, int hheight, int qquality, buffer_type bbuf_type) :
-    width(wwidth), height(hheight), quality(qquality), buf_type(bbuf_type)
+FixedJpegStack::FixedJpegStack(int wwidth, int hheight, buffer_type bbuf_type) :
+    width(wwidth), height(hheight), quality(60), buf_type(bbuf_type)
 {
     data = (unsigned char *)calloc(width*height*3, sizeof(*data));
     if (!data) throw "calloc in FixedJpegStack::FixedJpegStack failed!";
@@ -90,50 +91,58 @@ FixedJpegStack::Push(unsigned char *data_buf, int x, int y, int w, int h)
     }
 }
 
+void
+FixedJpegStack::SetQuality(int q)
+{
+    quality = q;
+}
+
 Handle<Value>
 FixedJpegStack::New(const Arguments &args)
 {
     HandleScope scope;
 
-    if (args.Length() != 4)
-        return VException("Four arguments required - width, height, quality and buffer type");
+    if (args.Length() < 2)
+        return VException("At least two arguments required - width, height, [and buffer type]");
     if (!args[0]->IsInt32())
         return VException("First argument must be integer width.");
     if (!args[1]->IsInt32())
         return VException("Second argument must be integer height.");
-    if (!args[2]->IsInt32())
-        return VException("Third argument must be integer quality.");
-    if (!args[3]->IsString())
-        return VException("Fourth argument must be a string. Either 'rgb', 'bgr', 'rgba' or 'bgra'.");
 
     int w = args[0]->Int32Value();
     int h = args[1]->Int32Value();
-    int quality = args[2]->Int32Value();
-    String::AsciiValue bt(args[3]->ToString());
 
     if (w < 0)
         return VException("Width can't be negative.");
     if (h < 0)
         return VException("Height can't be negative.");
-    if (quality < 0 || quality > 100)
-        return VException("Quality must be between 0 and 100 (inclusive).");
-    if (!(str_eq(*bt, "rgb") || str_eq(*bt, "bgr") || str_eq(*bt, "rgba") || str_eq(*bt, "bgra")))
-        return VException("Buffer type must be 'rgb', 'bgr', 'rgba' or 'bgra'.");
 
-    buffer_type buf_type;
-    if (str_eq(*bt, "rgb"))
-        buf_type = BUF_RGB;
-    else if (str_eq(*bt, "bgr"))
-        buf_type = BUF_BGR;
-    else if (str_eq(*bt, "rgba"))
-        buf_type = BUF_RGBA;
-    else if (str_eq(*bt, "bgra"))
-        buf_type = BUF_BGRA;
-    else 
-        return VException("Buffer type wasn't 'rgb', 'bgr', 'rgba' or 'bgra'.");
+    buffer_type buf_type = BUF_RGB;
+    if (args.Length() == 3) {
+        if (!args[2]->IsString())
+            return VException("Third argument must be a string. Either 'rgb', 'bgr', 'rgba' or 'bgra'.");
+
+        String::AsciiValue bt(args[2]->ToString());
+        if (!(str_eq(*bt, "rgb") || str_eq(*bt, "bgr") ||
+            str_eq(*bt, "rgba") || str_eq(*bt, "bgra")))
+        {
+            return VException("Buffer type must be 'rgb', 'bgr', 'rgba' or 'bgra'.");
+        }
+
+        if (str_eq(*bt, "rgb"))
+            buf_type = BUF_RGB;
+        else if (str_eq(*bt, "bgr"))
+            buf_type = BUF_BGR;
+        else if (str_eq(*bt, "rgba"))
+            buf_type = BUF_RGBA;
+        else if (str_eq(*bt, "bgra"))
+            buf_type = BUF_BGRA;
+        else 
+            return VException("Buffer type wasn't 'rgb', 'bgr', 'rgba' or 'bgra'.");
+    }
 
     try {
-        FixedJpegStack *jpeg = new FixedJpegStack(w, h, quality, buf_type);
+        FixedJpegStack *jpeg = new FixedJpegStack(w, h, buf_type);
         jpeg->Wrap(args.This());
         return args.This();
     }
@@ -191,6 +200,30 @@ FixedJpegStack::Push(const Arguments &args)
         return VException("Pushed fragment exceeds FixedJpegStack's height.");
 
     jpeg->Push((unsigned char *)data_buf->data(), x, y, w, h);
+
+    return Undefined();
+}
+
+Handle<Value>
+FixedJpegStack::SetQuality(const Arguments &args)
+{
+    HandleScope scope;
+
+    if (args.Length() != 1)
+        return VException("One argument required - quality");
+
+    if (!args[0]->IsInt32())
+        return VException("First argument must be integer quality");
+
+    int q = args[0]->Int32Value();
+
+    if (q < 0) 
+        return VException("Quality must be greater or equal to 0.");
+    if (q > 100)
+        return VException("Quality must be less than or equal to 100.");
+
+    FixedJpegStack *jpeg = ObjectWrap::Unwrap<FixedJpegStack>(args.This());
+    jpeg->SetQuality(q);
 
     return Undefined();
 }

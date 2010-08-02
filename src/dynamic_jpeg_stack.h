@@ -22,12 +22,13 @@ class DynamicJpegStack : public node::ObjectWrap {
     void UpdateOptimalDimension(int x, int y, int w, int h);
 
 public:
-    DynamicJpegStack(int qquality, buffer_type bbuf_type);
+    DynamicJpegStack(buffer_type bbuf_type);
     ~DynamicJpegStack();
 
     v8::Handle<v8::Value> JpegEncode();
     void Push(unsigned char *data_buf, int x, int y, int w, int h);
     void SetBackground(unsigned char *data_buf, int w, int h);
+    void SetQuality(int q);
     v8::Handle<v8::Value> Dimensions();
     void Reset();
 
@@ -36,6 +37,7 @@ public:
     static v8::Handle<v8::Value> JpegEncode(const v8::Arguments &args);
     static v8::Handle<v8::Value> Push(const v8::Arguments &args);
     static v8::Handle<v8::Value> SetBackground(const v8::Arguments &args);
+    static v8::Handle<v8::Value> SetQuality(const v8::Arguments &args);
     static v8::Handle<v8::Value> Dimensions(const v8::Arguments &args);
     static v8::Handle<v8::Value> Reset(const v8::Arguments &args);
 };

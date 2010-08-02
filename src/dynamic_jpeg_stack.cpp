@@ -22,12 +22,13 @@ DynamicJpegStack::Initialize(v8::Handle<v8::Object> target)
     NODE_SET_PROTOTYPE_METHOD(t, "push", Push);
     NODE_SET_PROTOTYPE_METHOD(t, "reset", Reset);
     NODE_SET_PROTOTYPE_METHOD(t, "setBackground", SetBackground);
+    NODE_SET_PROTOTYPE_METHOD(t, "setQuality", SetQuality);
     NODE_SET_PROTOTYPE_METHOD(t, "dimensions", Dimensions);
     target->Set(String::NewSymbol("DynamicJpegStack"), t->GetFunction());
 }
 
-DynamicJpegStack::DynamicJpegStack(int qquality, buffer_type bbuf_type) :
-    quality(qquality), buf_type(bbuf_type),
+DynamicJpegStack::DynamicJpegStack(buffer_type bbuf_type) :
+    quality(60), buf_type(bbuf_type),
     dyn_rect(-1, -1, 0, 0),
     bg_width(0), bg_height(0), data(NULL) {}
 
@@ -56,7 +57,6 @@ DynamicJpegStack::UpdateOptimalDimension(int x, int y, int w, int h)
     int hh = h - (dyn_rect.h - (y - dyn_rect.y));
     if (hh > 0)
         dyn_rect.h += hh;
-
 }
 
 Handle<Value>
@@ -152,6 +152,12 @@ DynamicJpegStack::SetBackground(unsigned char *data_buf, int w, int h)
 }
 
 void
+DynamicJpegStack::SetQuality(int q)
+{
+    quality = q;
+}
+
+void
 DynamicJpegStack::Reset()
 {
     dyn_rect = Rect(-1, -1, 0, 0);
@@ -176,34 +182,34 @@ DynamicJpegStack::New(const Arguments &args)
 {
     HandleScope scope;
 
-    if (args.Length() != 2)
-        return VException("Two arguments required - quality and buffer type");
-    if (!args[0]->IsInt32())
-        return VException("First argument must be integer quality.");
-    if (!args[1]->IsString())
-        return VException("Second argument must be a string. Either 'rgb', 'bgr', 'rgba' or 'bgra'.");
+    if (args.Length() > 1)
+        return VException("One argument max - buffer type.");
 
-    int quality = args[0]->Int32Value();
-    String::AsciiValue bt(args[1]->ToString());
+    buffer_type buf_type = BUF_RGB;
+    if (args.Length() == 1) {
+        if (!args[0]->IsString())
+            return VException("First argument must be a string. Either 'rgb', 'bgr', 'rgba' or 'bgra'.");
 
-    if (quality < 0 || quality > 100)
-        return VException("Quality must be between 0 and 100 (inclusive).");
-    if (!(str_eq(*bt, "rgb") || str_eq(*bt, "bgr") || str_eq(*bt, "rgba") || str_eq(*bt, "bgra")))
-        return VException("Buffer type must be 'rgb', 'bgr', 'rgba' or 'bgra'.");
+        String::AsciiValue bt(args[0]->ToString());
+        if (!(str_eq(*bt, "rgb") || str_eq(*bt, "bgr") ||
+            str_eq(*bt, "rgba") || str_eq(*bt, "bgra")))
+        {
+            return VException("Buffer type must be 'rgb', 'bgr', 'rgba' or 'bgra'.");
+        }
 
-    buffer_type buf_type;
-    if (str_eq(*bt, "rgb"))
-        buf_type = BUF_RGB;
-    else if (str_eq(*bt, "bgr"))
-        buf_type = BUF_BGR;
-    else if (str_eq(*bt, "rgba"))
-        buf_type = BUF_RGBA;
-    else if (str_eq(*bt, "bgra"))
-        buf_type = BUF_BGRA;
-    else 
-        return VException("Buffer type wasn't 'rgb', 'bgr', 'rgba' or 'bgra'.");
+        if (str_eq(*bt, "rgb"))
+            buf_type = BUF_RGB;
+        else if (str_eq(*bt, "bgr"))
+            buf_type = BUF_BGR;
+        else if (str_eq(*bt, "rgba"))
+            buf_type = BUF_RGBA;
+        else if (str_eq(*bt, "bgra"))
+            buf_type = BUF_BGRA;
+        else 
+            return VException("Buffer type wasn't 'rgb', 'bgr', 'rgba' or 'bgra'.");
+    }
 
-    DynamicJpegStack *jpeg = new DynamicJpegStack(quality, buf_type);
+    DynamicJpegStack *jpeg = new DynamicJpegStack(buf_type);
     jpeg->Wrap(args.This());
     return args.This();
 }
@@ -319,5 +325,29 @@ DynamicJpegStack::Dimensions(const Arguments &args)
 
     DynamicJpegStack *jpeg = ObjectWrap::Unwrap<DynamicJpegStack>(args.This());
     return scope.Close(jpeg->Dimensions());
+}
+
+Handle<Value>
+DynamicJpegStack::SetQuality(const Arguments &args)
+{
+    HandleScope scope;
+
+    if (args.Length() != 1)
+        return VException("One argument required - quality");
+
+    if (!args[0]->IsInt32())
+        return VException("First argument must be integer quality");
+
+    int q = args[0]->Int32Value();
+
+    if (q < 0) 
+        return VException("Quality must be greater or equal to 0.");
+    if (q > 100)
+        return VException("Quality must be less than or equal to 100.");
+
+    DynamicJpegStack *jpeg = ObjectWrap::Unwrap<DynamicJpegStack>(args.This());
+    jpeg->SetQuality(q);
+
+    return Undefined();
 }
 

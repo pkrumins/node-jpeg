@@ -22,6 +22,7 @@ public:
     ~JpegEncoder();
 
     void encode();
+    void set_quality(int qquality);
     const unsigned char *get_jpeg() const;
     unsigned int get_jpeg_len() const;
 
