@@ -53,43 +53,59 @@ FixedJpegStack::Push(unsigned char *data_buf, int x, int y, int w, int h)
 {
     int start = y*width*3 + x*3;
 
-    if (buf_type == BUF_RGB) {
+    switch (buf_type) {
+    case BUF_RGB:
         for (int i = 0; i < h; i++) {
-            for (int j = 0; j < 3*w; j+=3) {
-                data[start + i*width*3 + j] = data_buf[i*w*3 + j];
-                data[start + i*width*3 + j + 1] = data_buf[i*w*3 + j + 1];
-                data[start + i*width*3 + j + 2] = data_buf[i*w*3 + j + 2];
+            unsigned char *datap = &data[start + i*width*3];
+            for (int j = 0; j < w; j++) {
+                *datap++ = *data_buf++;
+                *datap++ = *data_buf++;
+                *datap++ = *data_buf++;
             }
         }
-    }
-    else if (buf_type == BUF_BGR) {
+        break;
+
+    case BUF_BGR:
         for (int i = 0; i < h; i++) {
-            for (int j = 0; j < 3*w; j+=3) {
-                data[start + i*width*3 + j] = data_buf[i*w*3 + j + 2];
-                data[start + i*width*3 + j + 1] = data_buf[i*w*3 + j + 1];
-                data[start + i*width*3 + j + 2] = data_buf[i*w*3 + j];
+            unsigned char *datap = &data[start + i*width*3];
+            for (int j = 0; j < w; j++) {
+                *datap++ = *(data_buf+2);
+                *datap++ = *(data_buf+1);
+                *datap++ = *data_buf;
+                data_buf+=3;
             }
         }
-    }
-    else if (buf_type == BUF_RGBA) {
+        break;
+
+    case BUF_RGBA:
         for (int i = 0; i < h; i++) {
-            for (int j = 0, k = 0; j < 3*w; j+=3, k+=4) {
-                data[start + i*width*3 + j] = data_buf[i*w*4 + k];
-                data[start + i*width*3 + j + 1] = data_buf[i*w*4 + k + 1];
-                data[start + i*width*3 + j + 2] = data_buf[i*w*4 + k + 2];
+            unsigned char *datap = &data[start + i*width*3];
+            for (int j = 0; j < w; j++) {
+                *datap++ = *data_buf++;
+                *datap++ = *data_buf++;
+                *datap++ = *data_buf++;
+                data_buf++;
             }
         }
-    }
-    else if (buf_type == BUF_BGRA) {
+        break;
+
+    case BUF_BGRA:
         for (int i = 0; i < h; i++) {
-            for (int j = 0, k = 0; j < 3*w; j+=3, k+=4) {
-                data[start + i*width*3 + j] = data_buf[i*w*4 + k + 2];
-                data[start + i*width*3 + j + 1] = data_buf[i*w*4 + k + 1];
-                data[start + i*width*3 + j + 2] = data_buf[i*w*4 + k];
+            unsigned char *datap = &data[start + i*width*3];
+            for (int j = 0; j < w; j++) {
+                *datap++ = *(data_buf+2);
+                *datap++ = *(data_buf+1);
+                *datap++ = *data_buf;
+                data_buf += 4;
             }
         }
+        break;
+
+    default:
+        throw "Unexpected buf_type in FixedJpegStack::Push";
     }
 }
+
 
 void
 FixedJpegStack::SetQuality(int q)
