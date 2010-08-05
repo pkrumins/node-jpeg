@@ -84,7 +84,8 @@ DynamicJpegStack::Push(unsigned char *data_buf, int x, int y, int w, int h)
 
     int start = y*bg_width*3 + x*3;
 
-    if (buf_type == BUF_RGB) {
+    switch (buf_type) {
+    case BUF_RGB:
         for (int i = 0; i < h; i++) {
             unsigned char *datap = &data[start + i*bg_width*3];
             for (int j = 0; j < w; j++) {
@@ -93,8 +94,9 @@ DynamicJpegStack::Push(unsigned char *data_buf, int x, int y, int w, int h)
                 *datap++ = *data_buf++;
             }
         }
-    }
-    else if (buf_type == BUF_BGR) {
+        break;
+
+    case BUF_BGR:
         for (int i = 0; i < h; i++) {
             unsigned char *datap = &data[start + i*bg_width*3];
             for (int j = 0; j < w; j++) {
@@ -104,8 +106,9 @@ DynamicJpegStack::Push(unsigned char *data_buf, int x, int y, int w, int h)
                 data_buf+=3;
             }
         }
-    }
-    else if (buf_type == BUF_RGBA) {
+        break;
+
+    case BUF_RGBA:
         for (int i = 0; i < h; i++) {
             unsigned char *datap = &data[start + i*bg_width*3];
             for (int j = 0; j < w; j++) {
@@ -115,8 +118,9 @@ DynamicJpegStack::Push(unsigned char *data_buf, int x, int y, int w, int h)
                 data_buf++;
             }
         }
-    }
-    else if (buf_type == BUF_BGRA) {
+        break;
+
+    case BUF_BGRA:
         for (int i = 0; i < h; i++) {
             unsigned char *datap = &data[start + i*bg_width*3];
             for (int j = 0; j < w; j++) {
@@ -126,6 +130,10 @@ DynamicJpegStack::Push(unsigned char *data_buf, int x, int y, int w, int h)
                 data_buf += 4;
             }
         }
+        break;
+
+    default:
+        throw "Unexpected buf_type in DynamicJpegStack::Push";
     }
 }
 
@@ -137,22 +145,30 @@ DynamicJpegStack::SetBackground(unsigned char *data_buf, int w, int h)
         data = NULL;
     }
 
-    if (buf_type == BUF_RGB) {
+    switch (buf_type) {
+    case BUF_RGB:
         data = (unsigned char *)malloc(sizeof(*data)*w*h*3);
         if (!data) throw "malloc failed in DynamicJpegStack::SetBackground";
         memcpy(data, data_buf, w*h*3);
-    }
-    else if (buf_type == BUF_BGR) {
+        break;
+
+    case BUF_BGR:
         data = bgr_to_rgb(data_buf, w*h*3);
         if (!data) throw "malloc failed in DynamicJpegStack::SetBackground";
-    }
-    else if (buf_type == BUF_RGBA) {
+        break;
+
+    case BUF_RGBA:
         data = rgba_to_rgb(data_buf, w*h*4);
         if (!data) throw "malloc failed in DynamicJpegStack::SetBackground";
-    }
-    else if (buf_type == BUF_BGRA) {
+        break;
+
+    case BUF_BGRA:
         data = bgra_to_rgb(data_buf, w*h*4);
         if (!data) throw "malloc failed in DynamicJpegStack::SetBackground";
+        break;
+
+    default:
+        throw "Unexpected buf_type in DynamicJpegStack::SetBackground";
     }
     bg_width = w;
     bg_height = h;
