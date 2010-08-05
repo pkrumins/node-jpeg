@@ -137,24 +137,28 @@ JpegEncoder::encode()
     jpeg_start_compress(&cinfo, TRUE);
 
     unsigned char *rgb_data;
-    if (buf_type == BUF_RGBA) {
+    switch (buf_type) {
+    case BUF_RGBA:
         rgb_data = rgba_to_rgb(data, width*height*4);
         if (!rgb_data) throw "malloc failed in JpegEncoder::encode/rgba_to_rgb.";
-    }
-    else if (buf_type == BUF_BGRA) {
+        break;
+
+    case BUF_BGRA:
         rgb_data = bgra_to_rgb(data, width*height*4);
         if (!rgb_data) throw "malloc failed in JpegEncoder::encode/bgra_to_rgb.";
+        break;
 
-    }
-    else if (buf_type == BUF_BGR) {
+    case BUF_BGR:
         rgb_data = bgr_to_rgb(data, width*height*3);
         if (!rgb_data) throw "malloc failed in JpegEncoder::encode/bgr_to_rgb.";
-    }
-    else if (buf_type == BUF_RGB) {
+        break;
+
+    case BUF_RGB:
         rgb_data = data;
-    }
-    else {
-        throw "Unknown buf_type";
+        break;
+
+    default:
+        throw "Unexpected buf_type in JpegEncoder::encode";
     }
 
     JSAMPROW row_pointer;
@@ -170,7 +174,7 @@ JpegEncoder::encode()
     jpeg_finish_compress(&cinfo);
     jpeg_destroy_compress(&cinfo);
 
-    if (buf_type == BUF_RGBA || buf_type == BUF_BGRA)
+    if (buf_type == BUF_BGR || buf_type == BUF_RGBA || buf_type == BUF_BGRA)
         free(rgb_data);
 }
 
