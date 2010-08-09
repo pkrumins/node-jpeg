@@ -19,6 +19,7 @@ def build(bld):
   obj.target = "jpeg"
   obj.source = "src/common.cpp src/jpeg_encoder.cpp src/jpeg.cpp src/fixed_jpeg_stack.cpp src/dynamic_jpeg_stack.cpp src/module.cpp"
   obj.uselib = "JPEG"
+  obj.cxxflags = ["-D_FILE_OFFSET_BITS=64", "-D_LARGEFILE_SOURCE"]
 
 def shutdown():
   if Options.commands['clean']:

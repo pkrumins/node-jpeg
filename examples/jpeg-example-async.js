@@ -8,7 +8,7 @@ var rgba = new Buffer(1152000);
 rgba.write(fs.readFileSync('./rgba-terminal.dat', 'binary'), 'binary');
 
 var jpeg = new Jpeg(rgba, 720, 400, 'rgba');
-var jpeg_img = jpeg.encodeSync();
-
-fs.writeFileSync('./jpeg.jpeg', jpeg_img, 'binary');
+jpeg.encode(function (image) {
+    fs.writeFileSync('./jpeg-async.jpeg', image, 'binary');
+})
 

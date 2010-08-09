@@ -9,14 +9,17 @@
 class Jpeg : public node::ObjectWrap {
     JpegEncoder jpeg_encoder;
 
+    static int EIO_JpegEncode(eio_req *req);
+    static int EIO_JpegEncodeAfter(eio_req *req);
 public:
     static void Initialize(v8::Handle<v8::Object> target);
     Jpeg(node::Buffer *ddata, int wwidth, int hheight, buffer_type bbuf_type);
-    v8::Handle<v8::Value> JpegEncode();
+    v8::Handle<v8::Value> JpegEncodeSync();
     void SetQuality(int q);
 
     static v8::Handle<v8::Value> New(const v8::Arguments &args);
-    static v8::Handle<v8::Value> JpegEncode(const v8::Arguments &args);
+    static v8::Handle<v8::Value> JpegEncodeSync(const v8::Arguments &args);
+    static v8::Handle<v8::Value> JpegEncodeAsync(const v8::Arguments &args);
     static v8::Handle<v8::Value> SetQuality(const v8::Arguments &args);
 };
 
