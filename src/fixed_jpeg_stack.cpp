@@ -18,7 +18,8 @@ FixedJpegStack::Initialize(v8::Handle<v8::Object> target)
 
     Local<FunctionTemplate> t = FunctionTemplate::New(New);
     t->InstanceTemplate()->SetInternalFieldCount(1);
-    NODE_SET_PROTOTYPE_METHOD(t, "encode", JpegEncode);
+    NODE_SET_PROTOTYPE_METHOD(t, "encode", JpegEncodeAsync);
+    NODE_SET_PROTOTYPE_METHOD(t, "encodeSync", JpegEncodeSync);
     NODE_SET_PROTOTYPE_METHOD(t, "push", Push);
     NODE_SET_PROTOTYPE_METHOD(t, "setQuality", SetQuality);
     target->Set(String::NewSymbol("FixedJpegStack"), t->GetFunction());
@@ -32,7 +33,7 @@ FixedJpegStack::FixedJpegStack(int wwidth, int hheight, buffer_type bbuf_type) :
 }
 
 Handle<Value>
-FixedJpegStack::JpegEncode()
+FixedJpegStack::JpegEncodeSync()
 {
     HandleScope scope;
 
@@ -168,11 +169,11 @@ FixedJpegStack::New(const Arguments &args)
 }
 
 Handle<Value>
-FixedJpegStack::JpegEncode(const Arguments &args)
+FixedJpegStack::JpegEncodeSync(const Arguments &args)
 {
     HandleScope scope;
     FixedJpegStack *jpeg = ObjectWrap::Unwrap<FixedJpegStack>(args.This());
-    return jpeg->JpegEncode();
+    return scope.Close(jpeg->JpegEncodeSync());
 }
 
 Handle<Value>
@@ -240,6 +241,100 @@ FixedJpegStack::SetQuality(const Arguments &args)
 
     FixedJpegStack *jpeg = ObjectWrap::Unwrap<FixedJpegStack>(args.This());
     jpeg->SetQuality(q);
+
+    return Undefined();
+}
+
+int
+FixedJpegStack::EIO_JpegEncode(eio_req *req)
+{
+    encode_request *enc_req = (encode_request *)req->data;
+    FixedJpegStack *jpeg = (FixedJpegStack *)enc_req->jpeg_obj;
+
+    try {
+        JpegEncoder encoder(jpeg->data, jpeg->width, jpeg->height, jpeg->quality, BUF_RGB);
+        encoder.encode();
+        enc_req->jpeg_len = encoder.get_jpeg_len();
+        enc_req->jpeg = (char *)malloc(sizeof(*enc_req->jpeg)*enc_req->jpeg_len);
+        if (!enc_req->jpeg) {
+            enc_req->error = strdup("malloc in FixedJpegStack::EIO_JpegEncode failed.");
+            return 0;
+        }
+        else {
+            memcpy(enc_req->jpeg, encoder.get_jpeg(), enc_req->jpeg_len);
+        }
+    }
+    catch (const char *err) {
+        enc_req->error = strdup(err);
+    }
+
+    return 0;
+}
+
+int 
+FixedJpegStack::EIO_JpegEncodeAfter(eio_req *req)
+{
+    HandleScope scope;
+
+    ev_unref(EV_DEFAULT_UC);
+    encode_request *enc_req = (encode_request *)req->data;
+
+    Handle<Value> argv[2];
+
+    if (enc_req->error) {
+        argv[0] = Undefined();
+        argv[1] = ErrorException(enc_req->error);
+    }
+    else {
+        argv[0] = Local<Value>::New(Encode(enc_req->jpeg, enc_req->jpeg_len, BINARY));
+        argv[1] = Undefined();
+    }
+
+    TryCatch try_catch; // don't quite see the necessity of this
+
+    enc_req->callback->Call(Context::GetCurrent()->Global(), 2, argv);
+
+    if (try_catch.HasCaught())
+        FatalException(try_catch);
+
+    enc_req->callback.Dispose();
+    free(enc_req->jpeg);
+    free(enc_req->error);
+
+    ((FixedJpegStack *)enc_req->jpeg_obj)->Unref();
+    free(enc_req);
+
+    return 0;
+}
+
+Handle<Value>
+FixedJpegStack::JpegEncodeAsync(const Arguments &args)
+{
+    HandleScope scope;
+
+    if (args.Length() != 1)
+        return VException("One argument required - callback function.");
+
+    if (!args[0]->IsFunction())
+        return VException("First argument must be a function.");
+
+    Local<Function> callback = Local<Function>::Cast(args[0]);
+    FixedJpegStack *jpeg = ObjectWrap::Unwrap<FixedJpegStack>(args.This());
+
+    encode_request *enc_req = (encode_request *)malloc(sizeof(*enc_req));
+    if (!enc_req)
+        return VException("malloc in FixedJpegStack::JpegEncodeAsync failed.");
+
+    enc_req->callback = Persistent<Function>::New(callback);
+    enc_req->jpeg_obj = jpeg;
+    enc_req->jpeg = NULL;
+    enc_req->jpeg_len = 0;
+    enc_req->error = NULL;
+
+    eio_custom(EIO_JpegEncode, EIO_PRI_DEFAULT, EIO_JpegEncodeAfter, enc_req);
+
+    ev_ref(EV_DEFAULT_UC);
+    jpeg->Ref();
 
     return Undefined();
 }
