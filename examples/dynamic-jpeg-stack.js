@@ -28,7 +28,7 @@ files.forEach(function(file) {
     jpegStack.push(buf, dim.x, dim.y, dim.w, dim.h);
 });
 
-fs.writeFileSync('dynamic.jpg', jpegStack.encode(), 'binary');
+fs.writeFileSync('dynamic.jpg', jpegStack.encodeSync(), 'binary');
 
 var dims = jpegStack.dimensions();
 
