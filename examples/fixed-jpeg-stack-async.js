@@ -23,5 +23,7 @@ files.forEach(function(file) {
     jpegStack.push(buf, dim.x, dim.y, dim.w, dim.h);
 });
 
-fs.writeFileSync('fixed.jpg', jpegStack.encodeSync(), 'binary');
+jpegStack.encode(function (image) {
+    fs.writeFileSync('fixed-async.jpg', image, 'binary');
+});
 
