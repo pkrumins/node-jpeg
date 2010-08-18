@@ -22,14 +22,12 @@ var files = fs.readdirSync('./push-data');
 
 files.forEach(function(file) {
     var dim = rectDim(file);
-    var rgba = fs.readFileSync('./push-data/' + file, 'binary');
-    var buf = new Buffer(rgba.length);
-    buf.write(rgba, 'binary');
-    jpegStack.push(buf, dim.x, dim.y, dim.w, dim.h);
+    var rgba = fs.readFileSync('./push-data/' + file);
+    jpegStack.push(rgba, dim.x, dim.y, dim.w, dim.h);
 });
 
 jpegStack.encode(function (image, dims) {
-    fs.writeFileSync('dynamic-async.jpg', image, 'binary');
+    fs.writeFileSync('dynamic-async.jpg', image.toString('binary'), 'binary');
     sys.puts("x: " + dims.x + ", y: " + dims.y + ", w: " + dims.width + ", h: " + dims.height);
 });
 

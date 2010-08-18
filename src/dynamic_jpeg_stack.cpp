@@ -69,9 +69,10 @@ DynamicJpegStack::JpegEncodeSync()
         JpegEncoder jpeg_encoder(data, bg_width, bg_height, quality, BUF_RGB);
         jpeg_encoder.setRect(Rect(dyn_rect.x, dyn_rect.y, dyn_rect.w, dyn_rect.h));
         jpeg_encoder.encode();
-        return scope.Close(
-            Encode(jpeg_encoder.get_jpeg(), jpeg_encoder.get_jpeg_len(), BINARY)
-        );
+        int jpeg_len = jpeg_encoder.get_jpeg_len();
+        Buffer *retbuf = Buffer::New(jpeg_len);
+        memcpy(retbuf->data(), jpeg_encoder.get_jpeg(), jpeg_len);
+        return scope.Close(retbuf->handle_); 
     }
     catch (const char *err) {
         return VException(err);
@@ -420,7 +421,9 @@ DynamicJpegStack::EIO_JpegEncodeAfter(eio_req *req)
         argv[2] = ErrorException(enc_req->error);
     }
     else {
-        argv[0] = Local<Value>::New(Encode(enc_req->jpeg, enc_req->jpeg_len, BINARY));
+        Buffer *buf = Buffer::New(enc_req->jpeg_len);
+        memcpy(buf->data(), enc_req->jpeg, enc_req->jpeg_len);
+        argv[0] = buf->handle_;
         argv[1] = jpeg->Dimensions();
         argv[2] = Undefined();
     }
