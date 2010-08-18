@@ -40,9 +40,10 @@ FixedJpegStack::JpegEncodeSync()
     try {
         JpegEncoder jpeg_encoder(data, width, height, quality, BUF_RGB);
         jpeg_encoder.encode();
-        return scope.Close(
-            Encode(jpeg_encoder.get_jpeg(), jpeg_encoder.get_jpeg_len(), BINARY)
-        );
+        int jpeg_len = jpeg_encoder.get_jpeg_len();
+        Buffer *retbuf = Buffer::New(jpeg_len);
+        memcpy(retbuf->data(), jpeg_encoder.get_jpeg(), jpeg_len);
+        return scope.Close(retbuf->handle_); 
     }
     catch (const char *err) {
         return VException(err);
@@ -286,7 +287,9 @@ FixedJpegStack::EIO_JpegEncodeAfter(eio_req *req)
         argv[1] = ErrorException(enc_req->error);
     }
     else {
-        argv[0] = Local<Value>::New(Encode(enc_req->jpeg, enc_req->jpeg_len, BINARY));
+        Buffer *buf = Buffer::New(enc_req->jpeg_len);
+        memcpy(buf->data(), enc_req->jpeg, enc_req->jpeg_len);
+        argv[0] = buf->handle_;
         argv[1] = Undefined();
     }
 
