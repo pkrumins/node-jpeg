@@ -7,6 +7,7 @@
 #include "common.h"
 #include "dynamic_jpeg_stack.h"
 #include "jpeg_encoder.h"
+#include "buffer_compat.h"
 
 using namespace v8;
 using namespace node;
@@ -71,7 +72,7 @@ DynamicJpegStack::JpegEncodeSync()
         jpeg_encoder.encode();
         int jpeg_len = jpeg_encoder.get_jpeg_len();
         Buffer *retbuf = Buffer::New(jpeg_len);
-        memcpy(retbuf->data(), jpeg_encoder.get_jpeg(), jpeg_len);
+        memcpy(BufferData(retbuf), jpeg_encoder.get_jpeg(), jpeg_len);
         return scope.Close(retbuf->handle_); 
     }
     catch (const char *err) {
@@ -294,7 +295,7 @@ DynamicJpegStack::Push(const Arguments &args)
     if (y+h > jpeg->bg_height) 
         return VException("Pushed fragment exceeds DynamicJpegStack's height.");
 
-    jpeg->Push((unsigned char *)data_buf->data(), x, y, w, h);
+    jpeg->Push((unsigned char *)BufferData(data_buf), x, y, w, h);
 
     return Undefined();
 }
@@ -324,7 +325,7 @@ DynamicJpegStack::SetBackground(const Arguments &args)
         return VException("Coordinate y smaller than 0.");
 
     try {
-        jpeg->SetBackground((unsigned char *)data_buf->data(), w, h);
+        jpeg->SetBackground((unsigned char *)BufferData(data_buf), w, h);
     }
     catch (const char *err) {
         return VException(err);
@@ -422,7 +423,7 @@ DynamicJpegStack::EIO_JpegEncodeAfter(eio_req *req)
     }
     else {
         Buffer *buf = Buffer::New(enc_req->jpeg_len);
-        memcpy(buf->data(), enc_req->jpeg, enc_req->jpeg_len);
+        memcpy(BufferData(buf), enc_req->jpeg, enc_req->jpeg_len);
         argv[0] = buf->handle_;
         argv[1] = jpeg->Dimensions();
         argv[2] = Undefined();
