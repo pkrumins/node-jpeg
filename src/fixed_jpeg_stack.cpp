@@ -7,6 +7,7 @@
 #include "common.h"
 #include "fixed_jpeg_stack.h"
 #include "jpeg_encoder.h"
+#include "buffer_compat.h"
 
 using namespace v8;
 using namespace node;
@@ -42,7 +43,7 @@ FixedJpegStack::JpegEncodeSync()
         jpeg_encoder.encode();
         int jpeg_len = jpeg_encoder.get_jpeg_len();
         Buffer *retbuf = Buffer::New(jpeg_len);
-        memcpy(retbuf->data(), jpeg_encoder.get_jpeg(), jpeg_len);
+        memcpy(BufferData(retbuf), jpeg_encoder.get_jpeg(), jpeg_len);
         return scope.Close(retbuf->handle_); 
     }
     catch (const char *err) {
@@ -217,7 +218,7 @@ FixedJpegStack::Push(const Arguments &args)
     if (y+h > jpeg->height) 
         return VException("Pushed fragment exceeds FixedJpegStack's height.");
 
-    jpeg->Push((unsigned char *)data_buf->data(), x, y, w, h);
+    jpeg->Push((unsigned char *)BufferData(data_buf), x, y, w, h);
 
     return Undefined();
 }
@@ -288,7 +289,7 @@ FixedJpegStack::EIO_JpegEncodeAfter(eio_req *req)
     }
     else {
         Buffer *buf = Buffer::New(enc_req->jpeg_len);
-        memcpy(buf->data(), enc_req->jpeg, enc_req->jpeg_len);
+        memcpy(BufferData(buf), enc_req->jpeg, enc_req->jpeg_len);
         argv[0] = buf->handle_;
         argv[1] = Undefined();
     }
