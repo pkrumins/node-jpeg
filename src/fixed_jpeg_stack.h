@@ -13,7 +13,7 @@ class FixedJpegStack : public node::ObjectWrap {
 
     unsigned char *data;
 
-    static int EIO_JpegEncode(eio_req *req);
+    static void EIO_JpegEncode(eio_req *req);
     static int EIO_JpegEncodeAfter(eio_req *req);
 
 public:

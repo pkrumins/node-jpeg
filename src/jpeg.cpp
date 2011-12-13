@@ -137,7 +137,7 @@ Jpeg::SetQuality(const Arguments &args)
     return Undefined();
 }
 
-int
+void
 Jpeg::EIO_JpegEncode(eio_req *req)
 {
     encode_request *enc_req = (encode_request *)req->data;
@@ -149,7 +149,7 @@ Jpeg::EIO_JpegEncode(eio_req *req)
         enc_req->jpeg = (char *)malloc(sizeof(*enc_req->jpeg)*enc_req->jpeg_len);
         if (!enc_req->jpeg) {
             enc_req->error = strdup("malloc in Jpeg::EIO_JpegEncode failed.");
-            return 0;
+            return;
         }
         else {
             memcpy(enc_req->jpeg, jpeg->jpeg_encoder.get_jpeg(), enc_req->jpeg_len);
@@ -158,8 +158,6 @@ Jpeg::EIO_JpegEncode(eio_req *req)
     catch (const char *err) {
         enc_req->error = strdup(err);
     }
-
-    return 0;
 }
 
 int 
