@@ -26,7 +26,7 @@ Jpeg::Initialize(v8::Handle<v8::Object> target)
 }
 
 Jpeg::Jpeg(Buffer *ddata, int wwidth, int hheight, buffer_type bbuf_type) :
-    jpeg_encoder((unsigned char *)BufferData(ddata), wwidth, hheight, 60, bbuf_type) {}
+    jpeg_encoder((unsigned char *)Buffer::Data(ddata), wwidth, hheight, 60, bbuf_type) {}
 
 Handle<Value>
 Jpeg::JpegEncodeSync()
@@ -42,7 +42,7 @@ Jpeg::JpegEncodeSync()
 
     int jpeg_len = jpeg_encoder.get_jpeg_len();
     Buffer *retbuf = Buffer::New(jpeg_len);
-    memcpy(BufferData(retbuf), jpeg_encoder.get_jpeg(), jpeg_len);
+    memcpy(Buffer::Data(retbuf), jpeg_encoder.get_jpeg(), jpeg_len);
     return scope.Close(retbuf->handle_); 
 }
 
@@ -176,7 +176,7 @@ Jpeg::EIO_JpegEncodeAfter(eio_req *req)
     }
     else {
         Buffer *buf = Buffer::New(enc_req->jpeg_len);
-        memcpy(BufferData(buf), enc_req->jpeg, enc_req->jpeg_len);
+        memcpy(Buffer::Data(buf), enc_req->jpeg, enc_req->jpeg_len);
         argv[0] = buf->handle_;
         argv[1] = Undefined();
     }
