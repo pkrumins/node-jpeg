@@ -98,8 +98,8 @@ Jpeg::New(const Arguments &args)
             return VException("Buffer type wasn't 'rgb', 'bgr', 'rgba' or 'bgra'.");
     }
 
-    Local<Object> jpeg = args[0]->ToObject();
-    Jpeg *jpeg = new Jpeg(Buffer::Data(jpeg), w, h, buf_type);
+    Local<Object> buffer = args[0]->ToObject();
+    Jpeg *jpeg = new Jpeg(Buffer::Data(buffer), w, h, buf_type);
     jpeg->Wrap(args.This());
     return args.This();
 }
