@@ -1,7 +1,7 @@
 {
    "name": "jpeg",
    "version": "1.0.0",
-   "main": "jpeg",
+   "main": "build/Release/jpeg",
    "description": "A C++ module for node-js that converts RGB and RGBA buffers to a JPEG images (in memory).",
    "keywords": [
        "jpg",
