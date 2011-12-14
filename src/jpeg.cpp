@@ -99,7 +99,7 @@ Jpeg::New(const Arguments &args)
     }
 
     Local<Object> buffer = args[0]->ToObject();
-    Jpeg *jpeg = new Jpeg(Buffer::Data(buffer), w, h, buf_type);
+    Jpeg *jpeg = new Jpeg((unsigned char*) Buffer::Data(buffer), w, h, buf_type);
     jpeg->Wrap(args.This());
     return args.This();
 }
