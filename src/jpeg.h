@@ -13,7 +13,7 @@ class Jpeg : public node::ObjectWrap {
     static int EIO_JpegEncodeAfter(eio_req *req);
 public:
     static void Initialize(v8::Handle<v8::Object> target);
-    Jpeg(node::Buffer *ddata, int wwidth, int hheight, buffer_type bbuf_type);
+    Jpeg(unsigned char *ddata, int wwidth, int hheight, buffer_type bbuf_type);
     v8::Handle<v8::Value> JpegEncodeSync();
     void SetQuality(int q);
 

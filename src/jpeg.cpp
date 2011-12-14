@@ -25,8 +25,8 @@ Jpeg::Initialize(v8::Handle<v8::Object> target)
     target->Set(String::NewSymbol("Jpeg"), t->GetFunction());
 }
 
-Jpeg::Jpeg(Buffer *ddata, int wwidth, int hheight, buffer_type bbuf_type) :
-    jpeg_encoder((unsigned char *)Buffer::Data(ddata), wwidth, hheight, 60, bbuf_type) {}
+Jpeg::Jpeg(unsigned char *ddata, int wwidth, int hheight, buffer_type bbuf_type) :
+    jpeg_encoder(ddata, wwidth, hheight, 60, bbuf_type) {}
 
 Handle<Value>
 Jpeg::JpegEncodeSync()
@@ -98,8 +98,8 @@ Jpeg::New(const Arguments &args)
             return VException("Buffer type wasn't 'rgb', 'bgr', 'rgba' or 'bgra'.");
     }
 
-    Buffer *data_buf = ObjectWrap::Unwrap<Buffer>(args[0]->ToObject());
-    Jpeg *jpeg = new Jpeg(data_buf, w, h, buf_type);
+    Local<Object> jpeg = args[0]->ToObject();
+    Jpeg *jpeg = new Jpeg(Buffer::Data(jpeg), w, h, buf_type);
     jpeg->Wrap(args.This());
     return args.This();
 }
