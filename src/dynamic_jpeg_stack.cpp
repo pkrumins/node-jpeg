@@ -377,7 +377,7 @@ DynamicJpegStack::SetQuality(const Arguments &args)
     return Undefined();
 }
 
-int
+void
 DynamicJpegStack::EIO_JpegEncode(eio_req *req)
 {
     encode_request *enc_req = (encode_request *)req->data;
@@ -392,7 +392,7 @@ DynamicJpegStack::EIO_JpegEncode(eio_req *req)
         enc_req->jpeg = (char *)malloc(sizeof(*enc_req->jpeg)*enc_req->jpeg_len);
         if (!enc_req->jpeg) {
             enc_req->error = strdup("malloc in DynamicJpegStack::EIO_JpegEncode failed.");
-            return 0;
+            return;
         }
         else {
             memcpy(enc_req->jpeg, encoder.get_jpeg(), enc_req->jpeg_len);
@@ -401,8 +401,6 @@ DynamicJpegStack::EIO_JpegEncode(eio_req *req)
     catch (const char *err) {
         enc_req->error = strdup(err);
     }
-
-    return 0;
 }
 
 int 

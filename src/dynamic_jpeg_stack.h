@@ -21,7 +21,7 @@ class DynamicJpegStack : public node::ObjectWrap {
 
     void update_optimal_dimension(int x, int y, int w, int h);
 
-    static int EIO_JpegEncode(eio_req *req);
+    static void EIO_JpegEncode(eio_req *req);
     static int EIO_JpegEncodeAfter(eio_req *req);
 public:
     DynamicJpegStack(buffer_type bbuf_type);

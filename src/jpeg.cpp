@@ -25,8 +25,8 @@ Jpeg::Initialize(v8::Handle<v8::Object> target)
     target->Set(String::NewSymbol("Jpeg"), t->GetFunction());
 }
 
-Jpeg::Jpeg(Buffer *ddata, int wwidth, int hheight, buffer_type bbuf_type) :
-    jpeg_encoder((unsigned char *)BufferData(ddata), wwidth, hheight, 60, bbuf_type) {}
+Jpeg::Jpeg(unsigned char *ddata, int wwidth, int hheight, buffer_type bbuf_type) :
+    jpeg_encoder(ddata, wwidth, hheight, 60, bbuf_type) {}
 
 Handle<Value>
 Jpeg::JpegEncodeSync()
@@ -42,7 +42,7 @@ Jpeg::JpegEncodeSync()
 
     int jpeg_len = jpeg_encoder.get_jpeg_len();
     Buffer *retbuf = Buffer::New(jpeg_len);
-    memcpy(BufferData(retbuf), jpeg_encoder.get_jpeg(), jpeg_len);
+    memcpy(Buffer::Data(retbuf), jpeg_encoder.get_jpeg(), jpeg_len);
     return scope.Close(retbuf->handle_); 
 }
 
@@ -98,8 +98,8 @@ Jpeg::New(const Arguments &args)
             return VException("Buffer type wasn't 'rgb', 'bgr', 'rgba' or 'bgra'.");
     }
 
-    Buffer *data_buf = ObjectWrap::Unwrap<Buffer>(args[0]->ToObject());
-    Jpeg *jpeg = new Jpeg(data_buf, w, h, buf_type);
+    Local<Object> buffer = args[0]->ToObject();
+    Jpeg *jpeg = new Jpeg((unsigned char*) Buffer::Data(buffer), w, h, buf_type);
     jpeg->Wrap(args.This());
     return args.This();
 }
@@ -137,7 +137,7 @@ Jpeg::SetQuality(const Arguments &args)
     return Undefined();
 }
 
-int
+void
 Jpeg::EIO_JpegEncode(eio_req *req)
 {
     encode_request *enc_req = (encode_request *)req->data;
@@ -149,7 +149,7 @@ Jpeg::EIO_JpegEncode(eio_req *req)
         enc_req->jpeg = (char *)malloc(sizeof(*enc_req->jpeg)*enc_req->jpeg_len);
         if (!enc_req->jpeg) {
             enc_req->error = strdup("malloc in Jpeg::EIO_JpegEncode failed.");
-            return 0;
+            return;
         }
         else {
             memcpy(enc_req->jpeg, jpeg->jpeg_encoder.get_jpeg(), enc_req->jpeg_len);
@@ -158,8 +158,6 @@ Jpeg::EIO_JpegEncode(eio_req *req)
     catch (const char *err) {
         enc_req->error = strdup(err);
     }
-
-    return 0;
 }
 
 int 
@@ -178,7 +176,7 @@ Jpeg::EIO_JpegEncodeAfter(eio_req *req)
     }
     else {
         Buffer *buf = Buffer::New(enc_req->jpeg_len);
-        memcpy(BufferData(buf), enc_req->jpeg, enc_req->jpeg_len);
+        memcpy(Buffer::Data(buf), enc_req->jpeg, enc_req->jpeg_len);
         argv[0] = buf->handle_;
         argv[1] = Undefined();
     }
