@@ -195,7 +195,7 @@ FixedJpegStack::Push(const Arguments &args)
         return VException("Fifth argument must be integer h.");
 
     FixedJpegStack *jpeg = ObjectWrap::Unwrap<FixedJpegStack>(args.This());
-    Buffer *data_buf = ObjectWrap::Unwrap<Buffer>(args[0]->ToObject());
+    Local<Object> data_buf = args[0]->ToObject();
     int x = args[1]->Int32Value();
     int y = args[2]->Int32Value();
     int w = args[3]->Int32Value();
