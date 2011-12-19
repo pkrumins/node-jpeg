@@ -43,7 +43,7 @@ FixedJpegStack::JpegEncodeSync()
         jpeg_encoder.encode();
         int jpeg_len = jpeg_encoder.get_jpeg_len();
         Buffer *retbuf = Buffer::New(jpeg_len);
-        memcpy(BufferData(retbuf), jpeg_encoder.get_jpeg(), jpeg_len);
+        memcpy(Buffer::Data(retbuf), jpeg_encoder.get_jpeg(), jpeg_len);
         return scope.Close(retbuf->handle_); 
     }
     catch (const char *err) {
@@ -218,7 +218,7 @@ FixedJpegStack::Push(const Arguments &args)
     if (y+h > jpeg->height) 
         return VException("Pushed fragment exceeds FixedJpegStack's height.");
 
-    jpeg->Push((unsigned char *)BufferData(data_buf), x, y, w, h);
+    jpeg->Push((unsigned char *)Buffer::Data(data_buf), x, y, w, h);
 
     return Undefined();
 }
@@ -287,7 +287,7 @@ FixedJpegStack::EIO_JpegEncodeAfter(eio_req *req)
     }
     else {
         Buffer *buf = Buffer::New(enc_req->jpeg_len);
-        memcpy(BufferData(buf), enc_req->jpeg, enc_req->jpeg_len);
+        memcpy(Buffer::Data(buf), enc_req->jpeg, enc_req->jpeg_len);
         argv[0] = buf->handle_;
         argv[1] = Undefined();
     }
