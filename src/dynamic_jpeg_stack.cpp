@@ -272,7 +272,7 @@ DynamicJpegStack::Push(const Arguments &args)
     if (!jpeg->data)
         return VException("No background has been set, use setBackground or setSolidBackground to set.");
 
-    Buffer *data_buf = ObjectWrap::Unwrap<Buffer>(args[0]->ToObject());
+    Local<Object> data_buf = args[0]->ToObject();
     int x = args[1]->Int32Value();
     int y = args[2]->Int32Value();
     int w = args[3]->Int32Value();
@@ -315,7 +315,7 @@ DynamicJpegStack::SetBackground(const Arguments &args)
         return VException("Third argument must be integer height.");
 
     DynamicJpegStack *jpeg = ObjectWrap::Unwrap<DynamicJpegStack>(args.This());
-    Buffer *data_buf = ObjectWrap::Unwrap<Buffer>(args[0]->ToObject());
+    Local<Object> data_buf = args[0]->ToObject();
     int w = args[1]->Int32Value();
     int h = args[2]->Int32Value();
 
