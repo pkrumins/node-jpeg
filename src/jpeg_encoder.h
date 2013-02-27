@@ -7,7 +7,7 @@
 #include "common.h"
 
 class JpegEncoder {
-    int width, height, quality;
+    int width, height, quality, smoothing;
     buffer_type buf_type;
     unsigned char *data;
 
@@ -23,6 +23,7 @@ public:
 
     void encode();
     void set_quality(int qquality);
+    void set_smoothing(int ssmoothing);
     const unsigned char *get_jpeg() const;
     unsigned int get_jpeg_len() const;
 
