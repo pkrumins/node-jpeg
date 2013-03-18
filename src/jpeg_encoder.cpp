@@ -1,5 +1,4 @@
 #include "jpeg_encoder.h"
-#include "time.h"
 
 JpegEncoder::JpegEncoder(unsigned char *ddata, int wwidth, int hheight,
     int qquality, buffer_type bbuf_type)
@@ -114,10 +113,6 @@ jpeg_mem_dest (j_compress_ptr cinfo,
 void
 JpegEncoder::encode()
 {
-
-
-    clock_t t = clock();
-
     struct jpeg_compress_struct cinfo;
     struct jpeg_error_mgr jerr;
 
@@ -182,9 +177,6 @@ JpegEncoder::encode()
 
     if (buf_type == BUF_BGR || buf_type == BUF_RGBA || buf_type == BUF_BGRA)
         free(rgb_data);
-
-    t = clock() - t;
-    printf ("encode( took %d clicks (%f ms).\n",(int)t,((float)(t*1000))/CLOCKS_PER_SEC);
 }
 
 void
