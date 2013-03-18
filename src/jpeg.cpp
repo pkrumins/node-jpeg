@@ -22,6 +22,7 @@ Jpeg::Initialize(v8::Handle<v8::Object> target)
     NODE_SET_PROTOTYPE_METHOD(t, "encode", JpegEncodeAsync);
     NODE_SET_PROTOTYPE_METHOD(t, "encodeSync", JpegEncodeSync);
     NODE_SET_PROTOTYPE_METHOD(t, "setQuality", SetQuality);
+    NODE_SET_PROTOTYPE_METHOD(t, "setSmoothing", SetSmoothing);
     target->Set(String::NewSymbol("Jpeg"), t->GetFunction());
 }
 
@@ -50,6 +51,12 @@ void
 Jpeg::SetQuality(int q)
 {
     jpeg_encoder.set_quality(q);
+}
+
+void
+Jpeg::SetSmoothing(int s)
+{
+    jpeg_encoder.set_smoothing(s);
 }
 
 Handle<Value>
@@ -133,6 +140,29 @@ Jpeg::SetQuality(const Arguments &args)
 
     Jpeg *jpeg = ObjectWrap::Unwrap<Jpeg>(args.This());
     jpeg->SetQuality(q);
+
+    return Undefined();
+}
+
+v8::Handle<v8::Value> Jpeg::SetSmoothing(const v8::Arguments &args)
+{
+    HandleScope scope;
+
+    if (args.Length() != 1)
+        return VException("One argument required - quality");
+
+    if (!args[0]->IsInt32())
+        return VException("First argument must be integer quality");
+
+    int s = args[0]->Int32Value();
+
+    if (s < 0)
+        return VException("Smoothing must be greater or equal to 0.");
+    if (s > 100)
+        return VException("Smoothing must be less than or equal to 100.");
+
+    Jpeg *jpeg = ObjectWrap::Unwrap<Jpeg>(args.This());
+    jpeg->SetSmoothing(s);
 
     return Undefined();
 }
