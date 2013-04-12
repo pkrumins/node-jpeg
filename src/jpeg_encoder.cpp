@@ -3,7 +3,7 @@
 JpegEncoder::JpegEncoder(unsigned char *ddata, int wwidth, int hheight,
     int qquality, buffer_type bbuf_type)
     :
-    data(ddata), width(wwidth), height(hheight), quality(qquality),
+      data(ddata), width(wwidth), height(hheight), quality(qquality), smoothing(0),
     buf_type(bbuf_type),
     jpeg(NULL), jpeg_len(0),
     offset(0, 0, 0, 0) {}
@@ -134,6 +134,7 @@ JpegEncoder::encode()
 
     jpeg_set_defaults(&cinfo);
     jpeg_set_quality(&cinfo, quality, TRUE);
+    cinfo.smoothing_factor = smoothing;
     jpeg_start_compress(&cinfo, TRUE);
 
     unsigned char *rgb_data;
@@ -182,6 +183,11 @@ void
 JpegEncoder::set_quality(int q)
 {
     quality = q;
+}
+
+void JpegEncoder::set_smoothing(int ssmoothing)
+{
+    smoothing  = ssmoothing;
 }
 
 const unsigned char *
