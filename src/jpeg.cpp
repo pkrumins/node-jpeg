@@ -168,7 +168,7 @@ v8::Handle<v8::Value> Jpeg::SetSmoothing(const v8::Arguments &args)
 }
 
 void
-Jpeg::EIO_JpegEncode(eio_req *req)
+Jpeg::EIO_JpegEncode(uv_work_t *req)
 {
     encode_request *enc_req = (encode_request *)req->data;
     Jpeg *jpeg = (Jpeg *)enc_req->jpeg_obj;
@@ -191,11 +191,10 @@ Jpeg::EIO_JpegEncode(eio_req *req)
 }
 
 int 
-Jpeg::EIO_JpegEncodeAfter(eio_req *req)
+Jpeg::EIO_JpegEncodeAfter(uv_work_t *req)
 {
     HandleScope scope;
 
-    ev_unref(EV_DEFAULT_UC);
     encode_request *enc_req = (encode_request *)req->data;
 
     Handle<Value> argv[2];
@@ -219,6 +218,8 @@ Jpeg::EIO_JpegEncodeAfter(eio_req *req)
         FatalException(try_catch);
 
     enc_req->callback.Dispose();
+    delete req;
+
     free(enc_req->jpeg);
     free(enc_req->error);
 
@@ -252,9 +253,10 @@ Jpeg::JpegEncodeAsync(const Arguments &args)
     enc_req->jpeg_len = 0;
     enc_req->error = NULL;
 
-    eio_custom(EIO_JpegEncode, EIO_PRI_DEFAULT, EIO_JpegEncodeAfter, enc_req);
+    uv_work_t *_req = new uv_work_t;
+    _req->data = enc_req;
+    uv_queue_work(uv_default_loop(), _req, EIO_JpegEncode, (uv_after_work_cb)EIO_JpegEncodeAfter);
 
-    ev_ref(EV_DEFAULT_UC);
     jpeg->Ref();
 
     return Undefined();
