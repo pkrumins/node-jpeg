@@ -1,4 +1,4 @@
-var JpegLib = require('jpeg');
+var JpegLib = require('../build/Release/jpeg');
 var fs = require('fs');
 var sys = require('sys');
 var Buffer = require('buffer').Buffer;

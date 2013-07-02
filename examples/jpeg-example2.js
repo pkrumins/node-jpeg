@@ -1,6 +1,6 @@
 var fs  = require('fs');
 var sys = require('sys');
-var Jpeg = require('../jpeg').Jpeg;
+var Jpeg = require('../build/Release/jpeg').Jpeg;
 var Buffer = require('buffer').Buffer;
 
 var WIDTH = 400, HEIGHT = 300;
