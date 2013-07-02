@@ -1,4 +1,4 @@
-This is a node.js module, writen in C++, that uses libjpeg to produce a JPEG
+This is a node.js module, written in C++, that uses libjpeg to produce a JPEG
 image (in memory) from a buffer of RGBA or RGB values. Since JPEG has no notion
 of A (alpha), the module always uses just RGB values.
 
@@ -23,7 +23,7 @@ Jpeg object that takes 4 arguments in its constructor:
 
     var jpeg = new Jpeg(buffer, width, height, [buffer_type]);
 
-The first argument, `buffer`, is a nodee.js `Buffer` filled with RGBA or RGB
+The first argument, `buffer`, is a node.js `Buffer` filled with RGBA or RGB
 values.
 The second argument is integer width of the image.
 The third argument is integer height of the image.
@@ -108,7 +108,7 @@ How to install?
 
 To get it compiled, you need to have libjpeg and node installed. Then just run
 
-    node-waf configure build
+    node-gyp rebuild
 
 to build the Jpeg module. It will produce a `jpeg.node` file as the module.
 
