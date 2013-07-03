@@ -7,9 +7,9 @@
 using namespace v8;
 
 extern "C" void
-init(Handle<Object> target)
+init(v8::Handle<v8::Object> target)
 {
-    HandleScope scope;
+    v8::HandleScope scope;
     Jpeg::Initialize(target);
     FixedJpegStack::Initialize(target);
     DynamicJpegStack::Initialize(target);
