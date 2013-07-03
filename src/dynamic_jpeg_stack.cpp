@@ -378,7 +378,7 @@ DynamicJpegStack::SetQuality(const Arguments &args)
 }
 
 void
-DynamicJpegStack::EIO_JpegEncode(eio_req *req)
+DynamicJpegStack::UV_JpegEncode(uv_work_t *req)
 {
     encode_request *enc_req = (encode_request *)req->data;
     DynamicJpegStack *jpeg = (DynamicJpegStack *)enc_req->jpeg_obj;
@@ -391,7 +391,7 @@ DynamicJpegStack::EIO_JpegEncode(eio_req *req)
         enc_req->jpeg_len = encoder.get_jpeg_len();
         enc_req->jpeg = (char *)malloc(sizeof(*enc_req->jpeg)*enc_req->jpeg_len);
         if (!enc_req->jpeg) {
-            enc_req->error = strdup("malloc in DynamicJpegStack::EIO_JpegEncode failed.");
+            enc_req->error = strdup("malloc in DynamicJpegStack::UV_JpegEncode failed.");
             return;
         }
         else {
@@ -403,13 +403,13 @@ DynamicJpegStack::EIO_JpegEncode(eio_req *req)
     }
 }
 
-int 
-DynamicJpegStack::EIO_JpegEncodeAfter(eio_req *req)
+void 
+DynamicJpegStack::UV_JpegEncodeAfter(uv_work_t *req)
 {
     HandleScope scope;
 
-    ev_unref(EV_DEFAULT_UC);
     encode_request *enc_req = (encode_request *)req->data;
+    delete req;
     DynamicJpegStack *jpeg = (DynamicJpegStack *)enc_req->jpeg_obj;
 
     Handle<Value> argv[3];
@@ -440,8 +440,6 @@ DynamicJpegStack::EIO_JpegEncodeAfter(eio_req *req)
 
     jpeg->Unref();
     free(enc_req);
-
-    return 0;
 }
 
 Handle<Value>
@@ -468,9 +466,10 @@ DynamicJpegStack::JpegEncodeAsync(const Arguments &args)
     enc_req->jpeg_len = 0;
     enc_req->error = NULL;
 
-    eio_custom(EIO_JpegEncode, EIO_PRI_DEFAULT, EIO_JpegEncodeAfter, enc_req);
+    uv_work_t* req = new uv_work_t;
+    req->data = enc_req;
+    uv_queue_work(uv_default_loop(), req, UV_JpegEncode, (uv_after_work_cb)UV_JpegEncodeAfter);
 
-    ev_ref(EV_DEFAULT_UC);
     jpeg->Ref();
 
     return Undefined();

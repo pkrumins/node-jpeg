@@ -9,8 +9,8 @@
 class Jpeg : public node::ObjectWrap {
     JpegEncoder jpeg_encoder;
 
-    static void EIO_JpegEncode(eio_req *req);
-    static int EIO_JpegEncodeAfter(eio_req *req);
+    static void UV_JpegEncode(uv_work_t *req);
+    static void UV_JpegEncodeAfter(uv_work_t *req);
 public:
     static void Initialize(v8::Handle<v8::Object> target);
     Jpeg(unsigned char *ddata, int wwidth, int hheight, buffer_type bbuf_type);
