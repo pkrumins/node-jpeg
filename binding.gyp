@@ -34,8 +34,7 @@
                     'OS=="win"', {
                         "include_dirs" : [ "gyp/include" ],
                         "libraries" : [
-                            '<(module_root_dir)/gyp/lib/libpng.lib',
-                            '<(module_root_dir)/gyp/lib/zlib.lib'
+                            '<(module_root_dir)/gyp/lib/libjpeg.lib'
                         ]
                     }
                 ]
