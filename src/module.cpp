@@ -14,4 +14,5 @@ init(Handle<Object> target)
     FixedJpegStack::Initialize(target);
     DynamicJpegStack::Initialize(target);
 }
+NODE_MODULE(jpeg, init)
 
