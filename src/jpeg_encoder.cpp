@@ -3,8 +3,8 @@
 JpegEncoder::JpegEncoder(unsigned char *ddata, int wwidth, int hheight,
     int qquality, buffer_type bbuf_type)
     :
-      data(ddata), width(wwidth), height(hheight), quality(qquality), smoothing(0),
-    buf_type(bbuf_type),
+      width(wwidth), height(hheight), quality(qquality), smoothing(0),
+    buf_type(bbuf_type), data(ddata),
     jpeg(NULL), jpeg_len(0),
     offset(0, 0, 0, 0) {}
 
