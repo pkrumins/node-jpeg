@@ -30,9 +30,9 @@ DynamicJpegStack::Initialize(v8::Handle<v8::Object> target)
 }
 
 DynamicJpegStack::DynamicJpegStack(buffer_type bbuf_type) :
-    quality(60), buf_type(bbuf_type),
-    dyn_rect(-1, -1, 0, 0),
-    bg_width(0), bg_height(0), data(NULL) {}
+    quality(60), buf_type(bbuf_type), data(NULL),
+    bg_width(0), bg_height(0),
+    dyn_rect(-1, -1, 0, 0) {}
 
 DynamicJpegStack::~DynamicJpegStack()
 {
