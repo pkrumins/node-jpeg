@@ -1,3 +1,4 @@
+#include <nan.h>
 #include <node.h>
 #include <node_buffer.h>
 #include <jpeglib.h>
@@ -7,17 +8,20 @@
 #include "common.h"
 #include "dynamic_jpeg_stack.h"
 #include "jpeg_encoder.h"
-#include "buffer_compat.h"
 
-using namespace v8;
-using namespace node;
+using v8::Object;
+using v8::Handle;
+using v8::Local;
+using v8::Function;
+using v8::FunctionTemplate;
+using v8::String;
 
 void
 DynamicJpegStack::Initialize(v8::Handle<v8::Object> target)
 {
-    HandleScope scope;
+    NanScope();
 
-    Local<FunctionTemplate> t = FunctionTemplate::New(New);
+    Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
     t->InstanceTemplate()->SetInternalFieldCount(1);
     NODE_SET_PROTOTYPE_METHOD(t, "encode", JpegEncodeAsync);
     NODE_SET_PROTOTYPE_METHOD(t, "encodeSync", JpegEncodeSync);
@@ -26,7 +30,7 @@ DynamicJpegStack::Initialize(v8::Handle<v8::Object> target)
     NODE_SET_PROTOTYPE_METHOD(t, "setBackground", SetBackground);
     NODE_SET_PROTOTYPE_METHOD(t, "setQuality", SetQuality);
     NODE_SET_PROTOTYPE_METHOD(t, "dimensions", Dimensions);
-    target->Set(String::NewSymbol("DynamicJpegStack"), t->GetFunction());
+    target->Set(NanNew<String>("DynamicJpegStack"), t->GetFunction());
 }
 
 DynamicJpegStack::DynamicJpegStack(buffer_type bbuf_type) :
@@ -64,20 +68,11 @@ DynamicJpegStack::update_optimal_dimension(int x, int y, int w, int h)
 Handle<Value>
 DynamicJpegStack::JpegEncodeSync()
 {
-    HandleScope scope;
-
-    try {
-        JpegEncoder jpeg_encoder(data, bg_width, bg_height, quality, BUF_RGB);
-        jpeg_encoder.setRect(Rect(dyn_rect.x, dyn_rect.y, dyn_rect.w, dyn_rect.h));
-        jpeg_encoder.encode();
-        int jpeg_len = jpeg_encoder.get_jpeg_len();
-        Buffer *retbuf = Buffer::New(jpeg_len);
-        memcpy(Buffer::Data(retbuf), jpeg_encoder.get_jpeg(), jpeg_len);
-        return scope.Close(retbuf->handle_); 
-    }
-    catch (const char *err) {
-        return VException(err);
-    }
+    JpegEncoder jpeg_encoder(data, bg_width, bg_height, quality, BUF_RGB);
+    jpeg_encoder.setRect(Rect(dyn_rect.x, dyn_rect.y, dyn_rect.w, dyn_rect.h));
+    jpeg_encoder.encode();
+    Handle<Object> retbuf = NanNewBufferHandle((const char*) jpeg_encoder.get_jpeg(), jpeg_encoder.get_jpeg_len());
+    return retbuf;
 }
 
 void
@@ -192,85 +187,93 @@ DynamicJpegStack::Reset()
 Handle<Value>
 DynamicJpegStack::Dimensions()
 {
-    HandleScope scope;
-
-    Local<Object> dim = Object::New();
-    dim->Set(String::NewSymbol("x"), Integer::New(dyn_rect.x));
-    dim->Set(String::NewSymbol("y"), Integer::New(dyn_rect.y));
-    dim->Set(String::NewSymbol("width"), Integer::New(dyn_rect.w));
-    dim->Set(String::NewSymbol("height"), Integer::New(dyn_rect.h));
-
-    return scope.Close(dim);
+    Handle<Object> dim = NanNew<Object>();
+    dim->Set(NanNew<String>("x"), NanNew<Number>(dyn_rect.x));
+    dim->Set(NanNew<String>("y"), NanNew<Number>(dyn_rect.y));
+    dim->Set(NanNew<String>("width"), NanNew<Number>(dyn_rect.w));
+    dim->Set(NanNew<String>("height"), NanNew<Number>(dyn_rect.h));
+    return dim;
 }
 
-Handle<Value>
-DynamicJpegStack::New(const Arguments &args)
+NAN_METHOD(DynamicJpegStack::New)
 {
-    HandleScope scope;
+    NanScope();
 
-    if (args.Length() > 1)
-        return VException("One argument max - buffer type.");
+    if (args.Length() > 1) {
+        NanThrowError("One argument max - buffer type.");
+    }
 
     buffer_type buf_type = BUF_RGB;
     if (args.Length() == 1) {
-        if (!args[0]->IsString())
-            return VException("First argument must be a string. Either 'rgb', 'bgr', 'rgba' or 'bgra'.");
+        if (!args[0]->IsString()) {
+            NanThrowError("First argument must be a string. Either 'rgb', 'bgr', 'rgba' or 'bgra'.");
+        }
 
-        String::AsciiValue bt(args[0]->ToString());
+        NanUtf8String bt(args[0]->ToString());
         if (!(str_eq(*bt, "rgb") || str_eq(*bt, "bgr") ||
             str_eq(*bt, "rgba") || str_eq(*bt, "bgra")))
         {
-            return VException("Buffer type must be 'rgb', 'bgr', 'rgba' or 'bgra'.");
+            NanThrowError("Buffer type must be 'rgb', 'bgr', 'rgba' or 'bgra'.");
         }
 
-        if (str_eq(*bt, "rgb"))
+        if (str_eq(*bt, "rgb")) {
             buf_type = BUF_RGB;
-        else if (str_eq(*bt, "bgr"))
+        } else if (str_eq(*bt, "bgr")) {
             buf_type = BUF_BGR;
-        else if (str_eq(*bt, "rgba"))
+        } else if (str_eq(*bt, "rgba")) {
             buf_type = BUF_RGBA;
-        else if (str_eq(*bt, "bgra"))
+        } else if (str_eq(*bt, "bgra")) {
             buf_type = BUF_BGRA;
-        else 
-            return VException("Buffer type wasn't 'rgb', 'bgr', 'rgba' or 'bgra'.");
+        } else {
+            NanThrowError("Buffer type wasn't 'rgb', 'bgr', 'rgba' or 'bgra'.");
+        }
     }
 
     DynamicJpegStack *jpeg = new DynamicJpegStack(buf_type);
     jpeg->Wrap(args.This());
-    return args.This();
+    NanReturnThis();
 }
 
-Handle<Value>
-DynamicJpegStack::JpegEncodeSync(const Arguments &args)
+NAN_METHOD(DynamicJpegStack::JpegEncodeSync)
 {
-    HandleScope scope;
+    NanScope();
     DynamicJpegStack *jpeg = ObjectWrap::Unwrap<DynamicJpegStack>(args.This());
-    return scope.Close(jpeg->JpegEncodeSync());
+    try {
+        NanReturnValue(jpeg->JpegEncodeSync());
+    }
+    catch (const char *err) {
+        NanThrowError(err);
+    }
 }
 
-Handle<Value>
-DynamicJpegStack::Push(const Arguments &args)
+NAN_METHOD(DynamicJpegStack::Push)
 {
-    HandleScope scope;
+    NanScope();
 
-    if (args.Length() != 5)
-        return VException("Five arguments required - buffer, x, y, width, height.");
+    if (args.Length() != 5) {
+        NanThrowError("Five arguments required - buffer, x, y, width, height.");
+    }
 
-    if (!Buffer::HasInstance(args[0]))
-        return VException("First argument must be Buffer.");
-    if (!args[1]->IsInt32())
-        return VException("Second argument must be integer x.");
-    if (!args[2]->IsInt32())
-        return VException("Third argument must be integer y.");
-    if (!args[3]->IsInt32())
-        return VException("Fourth argument must be integer w.");
-    if (!args[4]->IsInt32())
-        return VException("Fifth argument must be integer h.");
+    if (!node::Buffer::HasInstance(args[0])) {
+        NanThrowError("First argument must be Buffer.");
+    }
+    if (!args[1]->IsInt32()) {
+        NanThrowError("Second argument must be integer x.");
+    }
+    if (!args[2]->IsInt32()) {
+        NanThrowError("Third argument must be integer y.");
+    }
+    if (!args[3]->IsInt32()) {
+        NanThrowError("Fourth argument must be integer w.");
+    }
+    if (!args[4]->IsInt32()) {
+        NanThrowError("Fifth argument must be integer h.");
+    }
 
     DynamicJpegStack *jpeg = ObjectWrap::Unwrap<DynamicJpegStack>(args.This());
 
     if (!jpeg->data)
-        return VException("No background has been set, use setBackground or setSolidBackground to set.");
+        NanThrowError("No background has been set, use setBackground or setSolidBackground to set.");
 
     Local<Object> data_buf = args[0]->ToObject();
     int x = args[1]->Int32Value();
@@ -278,41 +281,48 @@ DynamicJpegStack::Push(const Arguments &args)
     int w = args[3]->Int32Value();
     int h = args[4]->Int32Value();
 
-    if (x < 0)
-        return VException("Coordinate x smaller than 0.");
-    if (y < 0)
-        return VException("Coordinate y smaller than 0.");
-    if (w < 0)
-        return VException("Width smaller than 0.");
-    if (h < 0)
-        return VException("Height smaller than 0.");
-    if (x >= jpeg->bg_width) 
-        return VException("Coordinate x exceeds DynamicJpegStack's background dimensions.");
-    if (y >= jpeg->bg_height) 
-        return VException("Coordinate y exceeds DynamicJpegStack's background dimensions.");
-    if (x+w > jpeg->bg_width) 
-        return VException("Pushed fragment exceeds DynamicJpegStack's width.");
-    if (y+h > jpeg->bg_height) 
-        return VException("Pushed fragment exceeds DynamicJpegStack's height.");
+    if (x < 0) {
+        NanThrowError("Coordinate x smaller than 0.");
+    }
+    if (y < 0) {
+        NanThrowError("Coordinate y smaller than 0.");
+    }
+    if (w < 0) {
+        NanThrowError("Width smaller than 0.");
+    }
+    if (h < 0) {
+        NanThrowError("Height smaller than 0.");
+    }
+    if (x >= jpeg->bg_width) {
+        NanThrowError("Coordinate x exceeds DynamicJpegStack's background dimensions.");
+    }
+    if (y >= jpeg->bg_height) {
+        NanThrowError("Coordinate y exceeds DynamicJpegStack's background dimensions.");
+    }
+    if (x+w > jpeg->bg_width) {
+        NanThrowError("Pushed fragment exceeds DynamicJpegStack's width.");
+    }
+    if (y+h > jpeg->bg_height) {
+        NanThrowError("Pushed fragment exceeds DynamicJpegStack's height.");
+    }
 
-    jpeg->Push((unsigned char *)Buffer::Data(data_buf), x, y, w, h);
+    jpeg->Push((unsigned char *)node::Buffer::Data(data_buf), x, y, w, h);
 
-    return Undefined();
+    NanReturnUndefined();
 }
 
-Handle<Value>
-DynamicJpegStack::SetBackground(const Arguments &args)
+NAN_METHOD(DynamicJpegStack::SetBackground)
 {
-    HandleScope scope;
+    NanScope();
 
     if (args.Length() != 3)
-        return VException("Four arguments required - buffer, width, height");
-    if (!Buffer::HasInstance(args[0]))
-        return VException("First argument must be Buffer.");
+        NanThrowError("Four arguments required - buffer, width, height");
+    if (!node::Buffer::HasInstance(args[0]))
+        NanThrowError("First argument must be Buffer.");
     if (!args[1]->IsInt32())
-        return VException("Second argument must be integer width.");
+        NanThrowError("Second argument must be integer width.");
     if (!args[2]->IsInt32())
-        return VException("Third argument must be integer height.");
+        NanThrowError("Third argument must be integer height.");
 
     DynamicJpegStack *jpeg = ObjectWrap::Unwrap<DynamicJpegStack>(args.This());
     Local<Object> data_buf = args[0]->ToObject();
@@ -320,61 +330,62 @@ DynamicJpegStack::SetBackground(const Arguments &args)
     int h = args[2]->Int32Value();
 
     if (w < 0)
-        return VException("Coordinate x smaller than 0.");
+        NanThrowError("Coordinate x smaller than 0.");
     if (h < 0)
-        return VException("Coordinate y smaller than 0.");
+        NanThrowError("Coordinate y smaller than 0.");
 
     try {
-        jpeg->SetBackground((unsigned char *)Buffer::Data(data_buf), w, h);
+        jpeg->SetBackground((unsigned char *)node::Buffer::Data(data_buf), w, h);
     }
     catch (const char *err) {
-        return VException(err);
+        NanThrowError(err);
     }
 
-    return Undefined();
+    NanReturnUndefined();
 }
 
-Handle<Value>
-DynamicJpegStack::Reset(const Arguments &args)
+NAN_METHOD(DynamicJpegStack::Reset)
 {
-    HandleScope scope;
+    NanScope();
 
     DynamicJpegStack *jpeg = ObjectWrap::Unwrap<DynamicJpegStack>(args.This());
     jpeg->Reset();
-    return Undefined();
+    NanReturnUndefined();
 }
 
-Handle<Value>
-DynamicJpegStack::Dimensions(const Arguments &args)
+NAN_METHOD(DynamicJpegStack::Dimensions)
 {
-    HandleScope scope;
+    NanScope();
 
     DynamicJpegStack *jpeg = ObjectWrap::Unwrap<DynamicJpegStack>(args.This());
-    return scope.Close(jpeg->Dimensions());
+    NanReturnValue(jpeg->Dimensions());
 }
 
-Handle<Value>
-DynamicJpegStack::SetQuality(const Arguments &args)
+NAN_METHOD(DynamicJpegStack::SetQuality)
 {
-    HandleScope scope;
+    NanScope();
 
-    if (args.Length() != 1)
-        return VException("One argument required - quality");
+    if (args.Length() != 1) {
+        NanThrowError("One argument required - quality");
+    }
 
-    if (!args[0]->IsInt32())
-        return VException("First argument must be integer quality");
+    if (!args[0]->IsInt32()) {
+        NanThrowError("First argument must be integer quality");
+    }
 
     int q = args[0]->Int32Value();
 
-    if (q < 0) 
-        return VException("Quality must be greater or equal to 0.");
-    if (q > 100)
-        return VException("Quality must be less than or equal to 100.");
+    if (q < 0) {
+        NanThrowError("Quality must be greater or equal to 0.");
+    }
+    if (q > 100) {
+        NanThrowError("Quality must be less than or equal to 100.");
+    }
 
     DynamicJpegStack *jpeg = ObjectWrap::Unwrap<DynamicJpegStack>(args.This());
     jpeg->SetQuality(q);
 
-    return Undefined();
+    NanReturnUndefined();
 }
 
 void
@@ -406,7 +417,7 @@ DynamicJpegStack::UV_JpegEncode(uv_work_t *req)
 void 
 DynamicJpegStack::UV_JpegEncodeAfter(uv_work_t *req)
 {
-    HandleScope scope;
+    NanScope();
 
     encode_request *enc_req = (encode_request *)req->data;
     delete req;
@@ -415,26 +426,20 @@ DynamicJpegStack::UV_JpegEncodeAfter(uv_work_t *req)
     Handle<Value> argv[3];
 
     if (enc_req->error) {
-        argv[0] = Undefined();
-        argv[1] = Undefined();
+        argv[0] = NanUndefined();
+        argv[1] = NanUndefined();
         argv[2] = ErrorException(enc_req->error);
     }
     else {
-        Buffer *buf = Buffer::New(enc_req->jpeg_len);
-        memcpy(Buffer::Data(buf), enc_req->jpeg, enc_req->jpeg_len);
-        argv[0] = buf->handle_;
+        Handle<Object> buf = NanNewBufferHandle(enc_req->jpeg, enc_req->jpeg_len);
+        argv[0] = buf;
         argv[1] = jpeg->Dimensions();
-        argv[2] = Undefined();
+        argv[2] = NanUndefined();
     }
 
-    TryCatch try_catch; // don't quite see the necessity of this
+    enc_req->callback->Call(3, argv);
 
-    enc_req->callback->Call(Context::GetCurrent()->Global(), 3, argv);
-
-    if (try_catch.HasCaught())
-        FatalException(try_catch);
-
-    enc_req->callback.Dispose();
+    delete enc_req->callback;
     free(enc_req->jpeg);
     free(enc_req->error);
 
@@ -442,25 +447,27 @@ DynamicJpegStack::UV_JpegEncodeAfter(uv_work_t *req)
     free(enc_req);
 }
 
-Handle<Value>
-DynamicJpegStack::JpegEncodeAsync(const Arguments &args)
+NAN_METHOD(DynamicJpegStack::JpegEncodeAsync)
 {
-    HandleScope scope;
+    NanScope();
 
-    if (args.Length() != 1)
-        return VException("One argument required - callback function.");
+    if (args.Length() != 1) {
+        NanThrowError("One argument required - callback function.");
+    }
 
-    if (!args[0]->IsFunction())
-        return VException("First argument must be a function.");
+    if (!args[0]->IsFunction()) {
+        NanThrowError("First argument must be a function.");
+    }
 
     Local<Function> callback = Local<Function>::Cast(args[0]);
     DynamicJpegStack *jpeg = ObjectWrap::Unwrap<DynamicJpegStack>(args.This());
 
     encode_request *enc_req = (encode_request *)malloc(sizeof(*enc_req));
-    if (!enc_req)
-        return VException("malloc in DynamicJpegStack::JpegEncodeAsync failed.");
+    if (!enc_req) {
+        NanThrowError("malloc in DynamicJpegStack::JpegEncodeAsync failed.");
+    }
 
-    enc_req->callback = Persistent<Function>::New(callback);
+    enc_req->callback = new NanCallback(callback);
     enc_req->jpeg_obj = jpeg;
     enc_req->jpeg = NULL;
     enc_req->jpeg_len = 0;
@@ -472,6 +479,6 @@ DynamicJpegStack::JpegEncodeAsync(const Arguments &args)
 
     jpeg->Ref();
 
-    return Undefined();
+    NanReturnUndefined();
 }
 

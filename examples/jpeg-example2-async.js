@@ -1,6 +1,6 @@
 var fs  = require('fs');
 var sys = require('sys');
-var Jpeg = require('../jpeg').Jpeg;
+var Jpeg = require('../').Jpeg;
 var Buffer = require('buffer').Buffer;
 
 var WIDTH = 400, HEIGHT = 300;
@@ -17,6 +17,5 @@ for (var i=0; i<HEIGHT; i++) {
 
 var jpeg = new Jpeg(rgba, WIDTH, HEIGHT, 'rgb');
 jpeg.encode(function (jpeg_img) {
-    fs.writeFileSync('./jpeg-gradient-async.jpeg', jpeg_img.toString('binary'), 'binary');
+    fs.writeFileSync(__dirname + '/jpeg-gradient-async.jpeg', jpeg_img.toString('binary'), 'binary');
 });
-

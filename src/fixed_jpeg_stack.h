@@ -23,11 +23,11 @@ public:
     void Push(unsigned char *data_buf, int x, int y, int w, int h);
     void SetQuality(int q);
 
-    static v8::Handle<v8::Value> New(const v8::Arguments &args);
-    static v8::Handle<v8::Value> JpegEncodeSync(const v8::Arguments &args);
-    static v8::Handle<v8::Value> JpegEncodeAsync(const v8::Arguments &args);
-    static v8::Handle<v8::Value> Push(const v8::Arguments &args);
-    static v8::Handle<v8::Value> SetQuality(const v8::Arguments &args);
+    static NAN_METHOD(New);
+    static NAN_METHOD(JpegEncodeSync);
+    static NAN_METHOD(JpegEncodeAsync);
+    static NAN_METHOD(Push);
+    static NAN_METHOD(SetQuality);
 };
 
 #endif

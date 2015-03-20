@@ -1,11 +1,18 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include <nan.h>
 #include <node.h>
 #include <cstring>
 
-v8::Handle<v8::Value> ErrorException(const char *msg);
-v8::Handle<v8::Value> VException(const char *msg);
+using v8::Handle;
+using v8::Number;
+using v8::Value;
+using v8::Persistent;
+using v8::Function;
+
+Handle<Value> ErrorException(const char *msg);
+Handle<Value> VException(const char *msg);
 
 struct Point {
     int x, y;
@@ -28,7 +35,7 @@ unsigned char *bgr_to_rgb(const unsigned char *rgb, int rgb_size);
 typedef enum { BUF_RGB, BUF_BGR, BUF_RGBA, BUF_BGRA } buffer_type;
 
 struct encode_request {
-    v8::Persistent<v8::Function> callback;
+    NanCallback* callback;
     void *jpeg_obj;
     char *jpeg;
     int jpeg_len;

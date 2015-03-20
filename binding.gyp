@@ -10,6 +10,9 @@
                 "src/dynamic_jpeg_stack.cpp",
                 "src/module.cpp",
             ],
+            "include_dirs" : [
+                "<!(node -e \"require('nan')\")"
+            ],
             "conditions" : [
                 [
                     'OS=="linux"', {

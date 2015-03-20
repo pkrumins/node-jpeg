@@ -1,0 +1,5 @@
+build
+examples/*.jpeg
+examples/*.jpg
+node_modules
+

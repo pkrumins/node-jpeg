@@ -19,14 +19,14 @@ size_t BufferLength(node::Buffer *b) {
 
 
 char *BufferData(v8::Local<v8::Object> buf_obj) {
-  v8::HandleScope scope;
+  NanScope();
   node::Buffer *buf = node::ObjectWrap::Unwrap<node::Buffer>(buf_obj);
   return buf->data();
 }
 
 
 size_t BufferLength(v8::Local<v8::Object> buf_obj) {
-  v8::HandleScope scope;
+  NanScope();
   node::Buffer *buf = node::ObjectWrap::Unwrap<node::Buffer>(buf_obj);
   return buf->length();
 }
@@ -45,13 +45,13 @@ size_t BufferLength(node::Buffer *b) {
 
 
 char *BufferData(v8::Local<v8::Object> buf_obj) {
-  v8::HandleScope scope;
+  NanScope();
   return node::Buffer::Data(buf_obj);
 }
 
 
 size_t BufferLength(v8::Local<v8::Object> buf_obj) {
-  v8::HandleScope scope;
+  NanScope();
   return node::Buffer::Length(buf_obj);
 }
 

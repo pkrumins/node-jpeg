@@ -1,3 +1,4 @@
+#include <nan.h>
 #include <node.h>
 #include <node_buffer.h>
 #include <jpeglib.h>
@@ -7,48 +8,44 @@
 #include "common.h"
 #include "fixed_jpeg_stack.h"
 #include "jpeg_encoder.h"
-#include "buffer_compat.h"
 
-using namespace v8;
-using namespace node;
+using v8::Object;
+using v8::Handle;
+using v8::Local;
+using v8::Function;
+using v8::FunctionTemplate;
+using v8::String;
 
 void
-FixedJpegStack::Initialize(v8::Handle<v8::Object> target)
+FixedJpegStack::Initialize(Handle<Object> target)
 {
-    HandleScope scope;
+    NanScope();
 
-    Local<FunctionTemplate> t = FunctionTemplate::New(New);
+    Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
     t->InstanceTemplate()->SetInternalFieldCount(1);
     NODE_SET_PROTOTYPE_METHOD(t, "encode", JpegEncodeAsync);
     NODE_SET_PROTOTYPE_METHOD(t, "encodeSync", JpegEncodeSync);
     NODE_SET_PROTOTYPE_METHOD(t, "push", Push);
     NODE_SET_PROTOTYPE_METHOD(t, "setQuality", SetQuality);
-    target->Set(String::NewSymbol("FixedJpegStack"), t->GetFunction());
+    target->Set(NanNew<String>("FixedJpegStack"), t->GetFunction());
 }
 
 FixedJpegStack::FixedJpegStack(int wwidth, int hheight, buffer_type bbuf_type) :
     width(wwidth), height(hheight), quality(60), buf_type(bbuf_type)
 {
     data = (unsigned char *)calloc(width*height*3, sizeof(*data));
-    if (!data) throw "calloc in FixedJpegStack::FixedJpegStack failed!";
+    if (!data) {
+        throw "calloc in FixedJpegStack::FixedJpegStack failed!";
+    }
 }
 
 Handle<Value>
 FixedJpegStack::JpegEncodeSync()
 {
-    HandleScope scope;
-
-    try {
-        JpegEncoder jpeg_encoder(data, width, height, quality, BUF_RGB);
-        jpeg_encoder.encode();
-        int jpeg_len = jpeg_encoder.get_jpeg_len();
-        Buffer *retbuf = Buffer::New(jpeg_len);
-        memcpy(Buffer::Data(retbuf), jpeg_encoder.get_jpeg(), jpeg_len);
-        return scope.Close(retbuf->handle_); 
-    }
-    catch (const char *err) {
-        return VException(err);
-    }
+    JpegEncoder jpeg_encoder(data, width, height, quality, BUF_RGB);
+    jpeg_encoder.encode();
+    Handle<Object> retbuf = NanNewBufferHandle((const char*) jpeg_encoder.get_jpeg(), jpeg_encoder.get_jpeg_len());
+    return retbuf;
 }
 
 void
@@ -116,83 +113,96 @@ FixedJpegStack::SetQuality(int q)
     quality = q;
 }
 
-Handle<Value>
-FixedJpegStack::New(const Arguments &args)
+NAN_METHOD(FixedJpegStack::New)
 {
-    HandleScope scope;
+    NanScope();
 
-    if (args.Length() < 2)
-        return VException("At least two arguments required - width, height, [and buffer type]");
-    if (!args[0]->IsInt32())
-        return VException("First argument must be integer width.");
-    if (!args[1]->IsInt32())
-        return VException("Second argument must be integer height.");
+    if (args.Length() < 2) {
+        NanThrowError("At least two arguments required - width, height, [and buffer type]");
+    }
+    if (!args[0]->IsInt32()) {
+        NanThrowError("First argument must be integer width.");
+    }
+    if (!args[1]->IsInt32()) {
+        NanThrowError("Second argument must be integer height.");
+    }
 
     int w = args[0]->Int32Value();
     int h = args[1]->Int32Value();
 
-    if (w < 0)
-        return VException("Width can't be negative.");
-    if (h < 0)
-        return VException("Height can't be negative.");
+    if (w < 0) {
+        NanThrowError("Width can't be negative.");
+    }
+    if (h < 0) {
+        NanThrowError("Height can't be negative.");
+    }
 
     buffer_type buf_type = BUF_RGB;
     if (args.Length() == 3) {
-        if (!args[2]->IsString())
-            return VException("Third argument must be a string. Either 'rgb', 'bgr', 'rgba' or 'bgra'.");
+        if (!args[2]->IsString()) {
+            NanThrowError("Third argument must be a string. Either 'rgb', 'bgr', 'rgba' or 'bgra'.");
+        }
 
-        String::AsciiValue bt(args[2]->ToString());
+        NanUtf8String bt(args[2]->ToString());
         if (!(str_eq(*bt, "rgb") || str_eq(*bt, "bgr") ||
             str_eq(*bt, "rgba") || str_eq(*bt, "bgra")))
         {
-            return VException("Buffer type must be 'rgb', 'bgr', 'rgba' or 'bgra'.");
+            NanThrowError("Buffer type must be 'rgb', 'bgr', 'rgba' or 'bgra'.");
         }
 
-        if (str_eq(*bt, "rgb"))
+        if (str_eq(*bt, "rgb")) {
             buf_type = BUF_RGB;
-        else if (str_eq(*bt, "bgr"))
+        } else if (str_eq(*bt, "bgr")) {
             buf_type = BUF_BGR;
-        else if (str_eq(*bt, "rgba"))
+        } else if (str_eq(*bt, "rgba")) {
             buf_type = BUF_RGBA;
-        else if (str_eq(*bt, "bgra"))
+        } else if (str_eq(*bt, "bgra")) {
             buf_type = BUF_BGRA;
-        else 
-            return VException("Buffer type wasn't 'rgb', 'bgr', 'rgba' or 'bgra'.");
+        } else {
+            NanThrowError("Buffer type wasn't 'rgb', 'bgr', 'rgba' or 'bgra'.");
+        }
     }
 
     try {
         FixedJpegStack *jpeg = new FixedJpegStack(w, h, buf_type);
         jpeg->Wrap(args.This());
-        return args.This();
+        NanReturnThis();
     }
     catch (const char *err) {
-        return VException(err);
+        NanThrowError(err);
     }
 }
 
-Handle<Value>
-FixedJpegStack::JpegEncodeSync(const Arguments &args)
+NAN_METHOD(FixedJpegStack::JpegEncodeSync)
 {
-    HandleScope scope;
+    NanScope();
     FixedJpegStack *jpeg = ObjectWrap::Unwrap<FixedJpegStack>(args.This());
-    return scope.Close(jpeg->JpegEncodeSync());
+    try {
+        NanReturnValue(jpeg->JpegEncodeSync());
+    } catch (const char *err) {
+        NanThrowError(err);
+    }
 }
 
-Handle<Value>
-FixedJpegStack::Push(const Arguments &args)
+NAN_METHOD(FixedJpegStack::Push)
 {
-    HandleScope scope;
+    NanScope();
 
-    if (!Buffer::HasInstance(args[0]))
-        return VException("First argument must be Buffer.");
-    if (!args[1]->IsInt32())
-        return VException("Second argument must be integer x.");
-    if (!args[2]->IsInt32())
-        return VException("Third argument must be integer y.");
-    if (!args[3]->IsInt32())
-        return VException("Fourth argument must be integer w.");
-    if (!args[4]->IsInt32())
-        return VException("Fifth argument must be integer h.");
+    if (!node::Buffer::HasInstance(args[0])) {
+        NanThrowError("First argument must be Buffer.");
+    }
+    if (!args[1]->IsInt32()) {
+        NanThrowError("Second argument must be integer x.");
+    }
+    if (!args[2]->IsInt32()) {
+        NanThrowError("Third argument must be integer y.");
+    }
+    if (!args[3]->IsInt32()) {
+        NanThrowError("Fourth argument must be integer w.");
+    }
+    if (!args[4]->IsInt32()) {
+        NanThrowError("Fifth argument must be integer h.");
+    }
 
     FixedJpegStack *jpeg = ObjectWrap::Unwrap<FixedJpegStack>(args.This());
     Local<Object> data_buf = args[0]->ToObject();
@@ -201,50 +211,61 @@ FixedJpegStack::Push(const Arguments &args)
     int w = args[3]->Int32Value();
     int h = args[4]->Int32Value();
 
-    if (x < 0)
-        return VException("Coordinate x smaller than 0.");
-    if (y < 0)
-        return VException("Coordinate y smaller than 0.");
-    if (w < 0)
-        return VException("Width smaller than 0.");
-    if (h < 0)
-        return VException("Height smaller than 0.");
-    if (x >= jpeg->width) 
-        return VException("Coordinate x exceeds FixedJpegStack's dimensions.");
-    if (y >= jpeg->height) 
-        return VException("Coordinate y exceeds FixedJpegStack's dimensions.");
-    if (x+w > jpeg->width) 
-        return VException("Pushed fragment exceeds FixedJpegStack's width.");
-    if (y+h > jpeg->height) 
-        return VException("Pushed fragment exceeds FixedJpegStack's height.");
+    if (x < 0) {
+        NanThrowError("Coordinate x smaller than 0.");
+    }
+    if (y < 0) {
+        NanThrowError("Coordinate y smaller than 0.");
+    }
+    if (w < 0) {
+        NanThrowError("Width smaller than 0.");
+    }
+    if (h < 0) {
+        NanThrowError("Height smaller than 0.");
+    }
+    if (x >= jpeg->width) {
+        NanThrowError("Coordinate x exceeds FixedJpegStack's dimensions.");
+    }
+    if (y >= jpeg->height) {
+        NanThrowError("Coordinate y exceeds FixedJpegStack's dimensions.");
+    }
+    if (x+w > jpeg->width) {
+        NanThrowError("Pushed fragment exceeds FixedJpegStack's width.");
+    }
+    if (y+h > jpeg->height) {
+        NanThrowError("Pushed fragment exceeds FixedJpegStack's height.");
+    }
 
-    jpeg->Push((unsigned char *)Buffer::Data(data_buf), x, y, w, h);
+    jpeg->Push((unsigned char *)node::Buffer::Data(data_buf), x, y, w, h);
 
-    return Undefined();
+    NanReturnUndefined();
 }
 
-Handle<Value>
-FixedJpegStack::SetQuality(const Arguments &args)
+NAN_METHOD(FixedJpegStack::SetQuality)
 {
-    HandleScope scope;
+    NanScope();
 
-    if (args.Length() != 1)
-        return VException("One argument required - quality");
+    if (args.Length() != 1) {
+        NanThrowError("One argument required - quality");
+    }
 
-    if (!args[0]->IsInt32())
-        return VException("First argument must be integer quality");
+    if (!args[0]->IsInt32()) {
+        NanThrowError("First argument must be integer quality");
+    }
 
     int q = args[0]->Int32Value();
 
-    if (q < 0) 
-        return VException("Quality must be greater or equal to 0.");
-    if (q > 100)
-        return VException("Quality must be less than or equal to 100.");
+    if (q < 0) {
+        NanThrowError("Quality must be greater or equal to 0.");
+    }
+    if (q > 100) {
+        NanThrowError("Quality must be less than or equal to 100.");
+    }
 
     FixedJpegStack *jpeg = ObjectWrap::Unwrap<FixedJpegStack>(args.This());
     jpeg->SetQuality(q);
 
-    return Undefined();
+    NanReturnUndefined();
 }
 
 void
@@ -274,7 +295,7 @@ FixedJpegStack::UV_JpegEncode(uv_work_t *req)
 void 
 FixedJpegStack::UV_JpegEncodeAfter(uv_work_t *req)
 {
-    HandleScope scope;
+    NanScope();
 
     encode_request *enc_req = (encode_request *)req->data;
     delete req;
@@ -282,24 +303,18 @@ FixedJpegStack::UV_JpegEncodeAfter(uv_work_t *req)
     Handle<Value> argv[2];
 
     if (enc_req->error) {
-        argv[0] = Undefined();
+        argv[0] = NanUndefined();
         argv[1] = ErrorException(enc_req->error);
     }
     else {
-        Buffer *buf = Buffer::New(enc_req->jpeg_len);
-        memcpy(Buffer::Data(buf), enc_req->jpeg, enc_req->jpeg_len);
-        argv[0] = buf->handle_;
-        argv[1] = Undefined();
+        Handle<Object> buf = NanNewBufferHandle(enc_req->jpeg, enc_req->jpeg_len);
+        argv[0] = buf;
+        argv[1] = NanUndefined();
     }
 
-    TryCatch try_catch; // don't quite see the necessity of this
+    enc_req->callback->Call(2, argv);
 
-    enc_req->callback->Call(Context::GetCurrent()->Global(), 2, argv);
-
-    if (try_catch.HasCaught())
-        FatalException(try_catch);
-
-    enc_req->callback.Dispose();
+    delete enc_req->callback;
     free(enc_req->jpeg);
     free(enc_req->error);
 
@@ -307,25 +322,27 @@ FixedJpegStack::UV_JpegEncodeAfter(uv_work_t *req)
     free(enc_req);
 }
 
-Handle<Value>
-FixedJpegStack::JpegEncodeAsync(const Arguments &args)
+NAN_METHOD(FixedJpegStack::JpegEncodeAsync)
 {
-    HandleScope scope;
+    NanScope();
 
-    if (args.Length() != 1)
-        return VException("One argument required - callback function.");
+    if (args.Length() != 1) {
+        NanThrowError("One argument required - callback function.");
+    }
 
-    if (!args[0]->IsFunction())
-        return VException("First argument must be a function.");
+    if (!args[0]->IsFunction()) {
+        NanThrowError("First argument must be a function.");
+    }
 
-    Local<Function> callback = Local<Function>::Cast(args[0]);
+    Local<Function> callback = args[0].As<Function>();
     FixedJpegStack *jpeg = ObjectWrap::Unwrap<FixedJpegStack>(args.This());
 
     encode_request *enc_req = (encode_request *)malloc(sizeof(*enc_req));
-    if (!enc_req)
-        return VException("malloc in FixedJpegStack::JpegEncodeAsync failed.");
+    if (!enc_req) {
+        NanThrowError("malloc in FixedJpegStack::JpegEncodeAsync failed.");
+    }
 
-    enc_req->callback = Persistent<Function>::New(callback);
+    enc_req->callback = new NanCallback(callback);
     enc_req->jpeg_obj = jpeg;
     enc_req->jpeg = NULL;
     enc_req->jpeg_len = 0;
@@ -336,6 +353,6 @@ FixedJpegStack::JpegEncodeAsync(const Arguments &args)
     uv_queue_work(uv_default_loop(), req, UV_JpegEncode, (uv_after_work_cb)UV_JpegEncodeAfter);
     jpeg->Ref();
 
-    return Undefined();
+    NanReturnUndefined();
 }
 

@@ -35,14 +35,14 @@ public:
     void Reset();
 
     static void Initialize(v8::Handle<v8::Object> target);
-    static v8::Handle<v8::Value> New(const v8::Arguments &args);
-    static v8::Handle<v8::Value> JpegEncodeSync(const v8::Arguments &args);
-    static v8::Handle<v8::Value> JpegEncodeAsync(const v8::Arguments &args);
-    static v8::Handle<v8::Value> Push(const v8::Arguments &args);
-    static v8::Handle<v8::Value> SetBackground(const v8::Arguments &args);
-    static v8::Handle<v8::Value> SetQuality(const v8::Arguments &args);
-    static v8::Handle<v8::Value> Dimensions(const v8::Arguments &args);
-    static v8::Handle<v8::Value> Reset(const v8::Arguments &args);
+    static NAN_METHOD(New);
+    static NAN_METHOD(JpegEncodeSync);
+    static NAN_METHOD(JpegEncodeAsync);
+    static NAN_METHOD(Push);
+    static NAN_METHOD(SetBackground);
+    static NAN_METHOD(SetQuality);
+    static NAN_METHOD(Dimensions);
+    static NAN_METHOD(Reset);
 };
 
 #endif
