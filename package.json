@@ -1,7 +1,7 @@
 {
   "name": "jpeg",
   "version": "2.0.0",
-  "main": "build/Release/jpeg",
+  "main": "bindings/jpeg",
   "description": "A C++ module for node-js that converts RGB and RGBA buffers to a JPEG images (in memory).",
   "keywords": [
     "jpg",
@@ -32,6 +32,22 @@
     "install": "node-gyp configure build"
   },
   "dependencies": {
-    "nan": "^1.7.0"
+    "nan": "^1.7.0",
+    "node-pre-gyp": "0.6.x"
+  },
+  "devDependencies": {
+    "aws-sdk": "~2.0.0-rc.15"
+  },
+  "bundledDependencies": [
+    "node-pre-gyp"
+  ],
+  "scripts": {
+    "install": "node-pre-gyp install --fallback-to-build"
+  },
+  "binary": {
+    "module_name": "jpeg",
+    "module_path": "./bindings",
+    "host": "https://tessel-builds.s3-us-west-2.amazonaws.com",
+    "remote_path": "./pre-gyp/{name}/v{version}"
   }
 }
