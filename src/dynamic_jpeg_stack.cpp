@@ -428,7 +428,7 @@ DynamicJpegStack::UV_JpegEncodeAfter(uv_work_t *req)
     if (enc_req->error) {
         argv[0] = NanUndefined();
         argv[1] = NanUndefined();
-        argv[2] = ErrorException(enc_req->error);
+        argv[2] = NanError(enc_req->error);
     }
     else {
         Handle<Object> buf = NanNewBufferHandle(enc_req->jpeg, enc_req->jpeg_len);

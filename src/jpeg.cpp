@@ -215,7 +215,7 @@ Jpeg::UV_JpegEncodeAfter(uv_work_t *req)
 
     if (enc_req->error) {
         argv[0] = NanUndefined();
-        argv[1] = ErrorException(enc_req->error);
+        argv[1] = NanError(enc_req->error);
     }
     else {
         Handle<Object> buf = NanNewBufferHandle(enc_req->jpeg, enc_req->jpeg_len);

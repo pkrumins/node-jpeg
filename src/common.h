@@ -11,9 +11,6 @@ using v8::Value;
 using v8::Persistent;
 using v8::Function;
 
-Handle<Value> ErrorException(const char *msg);
-Handle<Value> VException(const char *msg);
-
 struct Point {
     int x, y;
     Point() {}
