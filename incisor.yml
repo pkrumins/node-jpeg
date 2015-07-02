@@ -1,0 +1,21 @@
+builds:
+  - os: windows
+    stages:
+      setup:
+        - npm install
+      build:
+        - npm test
+
+  - os: linux
+    stages:
+      setup:
+        - npm install
+      build:
+        - npm test
+
+  - os: osx
+    stages:
+      setup:
+        - npm install
+      build:
+        - npm test

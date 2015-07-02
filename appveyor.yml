@@ -1,0 +1,11 @@
+environment:
+  global: {}
+init: []
+install:
+  - cmd: 'setlocal & npm install & endlocal'
+build_script:
+  - cmd: 'setlocal & npm test & endlocal'
+clone_depth: 10
+cache:
+  - '%CYG_CACHE%'
+test: 'off'
