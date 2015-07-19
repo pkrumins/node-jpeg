@@ -1,35 +1,53 @@
 {
-   "name": "jpeg",
-   "version": "2.0.0",
-   "main": "build/Release/jpeg",
-   "description": "A C++ module for node-js that converts RGB and RGBA buffers to a JPEG images (in memory).",
-   "keywords": [
-       "jpg",
-       "rgba",
-       "rgb",
-       "image",
-       "picture"
-   ],
-   "author": {
-       "name": "Peteris Krumins",
-       "email": "peteris.krumins@gmail.com",
-       "web": "http://www.catonmat.net",
-       "twitter": "pkrumins"
-   },
-   "license": "MIT",
-   "repository": {
-       "type": "git",
-       "url": "http://github.com/pkrumins/node-jpeg.git" 
-   },
-   "directories": {
-       "examples": "examples",
-       "src": "src"
-   },
-   "engines": {
-       "node": ">=0.1.93"
-   },
-   "scripts": {
-       "install": "node-gyp configure build"
-   }
+  "name": "jpeg",
+  "version": "2.0.0",
+  "main": "bindings/jpeg",
+  "description": "A C++ module for node-js that converts RGB and RGBA buffers to a JPEG images (in memory).",
+  "keywords": [
+    "jpg",
+    "rgba",
+    "rgb",
+    "image",
+    "picture"
+  ],
+  "author": {
+    "name": "Peteris Krumins",
+    "email": "peteris.krumins@gmail.com",
+    "web": "http://www.catonmat.net",
+    "twitter": "pkrumins"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/pkrumins/node-jpeg.git"
+  },
+  "directories": {
+    "examples": "examples",
+    "src": "src"
+  },
+  "engines": {
+    "node": ">=0.1.93"
+  },
+  "scripts": {
+    "install": "node-gyp configure build"
+  },
+  "dependencies": {
+    "nan": "^1.7.0",
+    "node-pre-gyp": "0.6.x"
+  },
+  "devDependencies": {
+    "aws-sdk": "~2.0.0-rc.15"
+  },
+  "bundledDependencies": [
+    "node-pre-gyp"
+  ],
+  "scripts": {
+    "install": "node-pre-gyp install --fallback-to-build"
+  },
+  "binary": {
+    "module_name": "jpeg",
+    "module_path": "./bindings",
+    "host": "https://tessel-builds.s3-us-west-2.amazonaws.com",
+    "remote_path": "./pre-gyp/{name}/v{version}"
+  }
 }
-

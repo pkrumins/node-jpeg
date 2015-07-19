@@ -1,4 +1,4 @@
-var JpegLib = require('jpeg');
+var JpegLib = require('../');
 var fs = require('fs');
 var sys = require('sys');
 var Buffer = require('buffer').Buffer;
@@ -13,13 +13,13 @@ function rectDim(fileName) {
     return { x: dim[0], y: dim[1], w: dim[2], h: dim[3] }
 }
 
-var files = fs.readdirSync('./push-data');
+var files = fs.readdirSync(__dirname + '/push-data');
 
 files.forEach(function(file) {
     var dim = rectDim(file);
-    var rgba = fs.readFileSync('./push-data/' + file);
+    var rgba = fs.readFileSync(__dirname + '/push-data/' + file);
     jpegStack.push(rgba, dim.x, dim.y, dim.w, dim.h);
 });
 
-fs.writeFileSync('fixed.jpg', jpegStack.encodeSync().toString('binary'), 'binary');
+fs.writeFileSync(__dirname + '/fixed.jpg', jpegStack.encodeSync().toString('binary'), 'binary');
 

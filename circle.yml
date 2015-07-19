@@ -1,0 +1,15 @@
+machine:
+  environment:
+    A: 1
+dependencies:
+  override:
+    - npm test:
+        environment: {}
+  pre:
+    - npm install:
+        environment: {}
+test:
+  override:
+    - 'true'
+general:
+  build_dir: .

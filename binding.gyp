@@ -10,6 +10,9 @@
                 "src/dynamic_jpeg_stack.cpp",
                 "src/module.cpp",
             ],
+            "include_dirs" : [
+                "<!(node -e \"require('nan')\")"
+            ],
             "conditions" : [
                 [
                     'OS=="linux"', {
@@ -39,6 +42,17 @@
                     }
                 ]
             ]
-        }
+        },
+        {
+          "target_name": "action_after_build",
+          "type": "none",
+          "dependencies": [ "<(module_name)" ],
+          "copies": [
+            {
+              "files": [ "<(PRODUCT_DIR)/<(module_name).node" ],
+              "destination": "<(module_path)"
+            }
+          ]
+        },
     ]
 }

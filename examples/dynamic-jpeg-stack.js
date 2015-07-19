@@ -1,11 +1,11 @@
-var JpegLib = require('jpeg');
+var JpegLib = require('../');
 var fs = require('fs');
 var sys = require('sys');
 var Buffer = require('buffer').Buffer;
 
 // --------
 
-var terminal = fs.readFileSync('./rgba-terminal.dat');
+var terminal = fs.readFileSync(__dirname + '/rgba-terminal.dat');
 
 var jpegStack = new JpegLib.DynamicJpegStack('rgba');
 jpegStack.setBackground(terminal, 720, 400);
@@ -18,16 +18,16 @@ function rectDim(fileName) {
     return { x: dim[0], y: dim[1], w: dim[2], h: dim[3] }
 }
 
-var files = fs.readdirSync('./push-data');
+var files = fs.readdirSync(__dirname + '/push-data');
 
 files.forEach(function(file) {
     var dim = rectDim(file);
-    var rgba = fs.readFileSync('./push-data/' + file);
+    var rgba = fs.readFileSync(__dirname + '/push-data/' + file);
     jpegStack.push(rgba, dim.x, dim.y, dim.w, dim.h);
 });
 
-fs.writeFileSync('dynamic.jpg', jpegStack.encodeSync().toString('binary'), 'binary');
+fs.writeFileSync(__dirname + '/dynamic.jpg', jpegStack.encodeSync().toString('binary'), 'binary');
 
 var dims = jpegStack.dimensions();
 
-sys.puts("x: " + dims.x + ", y: " + dims.y + ", w: " + dims.width + ", h: " + dims.height);
+console.log("x: " + dims.x + ", y: " + dims.y + ", w: " + dims.width + ", h: " + dims.height);

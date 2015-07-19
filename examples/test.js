@@ -1,0 +1,8 @@
+require('./dynamic-jpeg-stack-async')
+require('./dynamic-jpeg-stack')
+require('./fixed-jpeg-stack-async')
+require('./fixed-jpeg-stack')
+require('./jpeg-example-async')
+require('./jpeg-example')
+require('./jpeg-example2-async')
+require('./jpeg-example2')
